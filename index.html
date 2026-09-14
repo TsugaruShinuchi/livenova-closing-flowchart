@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="LiveNovaのクロージングスクリプトを分岐ごとに確認できるフローチャート">
+  <link rel="icon" href="data:,">
   <title>LiveNova クロージング・フローナビ</title>
   <style>
     :root {
@@ -236,6 +237,30 @@
     .copy-card.copied { border-color: var(--green); background: var(--green-soft); }
     .copy-card.copied .copy-card-action { background: var(--green); }
     .copy-feedback { min-height: 1.4em; margin: 8px 0 0; color: var(--green); font-size: .76rem; font-weight: 800; }
+    .copy-data-panel { margin-top: 12px; padding: 13px 14px; border: 1px solid #d8e2ea; border-radius: 12px; background: #f8fafc; }
+    .copy-data-panel > strong { display: block; color: #334e68; font-size: .82rem; }
+    .copy-data-note { margin: 4px 0 10px; color: var(--muted); font-size: .73rem; line-height: 1.55; }
+    .copy-data-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+    .copy-data-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 8px 11px;
+      border: 1px solid #a9becd;
+      border-radius: 9px;
+      color: #285979;
+      background: #fff;
+      font: inherit;
+      font-size: .76rem;
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .copy-data-button:hover { border-color: var(--blue); background: var(--blue-soft); }
+    .copy-data-button.primary { color: #fff; border-color: var(--navy); background: var(--navy); }
+    .copy-data-button.primary:hover { background: #174f7d; }
+    .copy-data-status { min-height: 1.4em; margin: 8px 0 0; color: var(--green); font-size: .73rem; font-weight: 800; }
+    .copy-data-input { display: none; }
     .memo-editor textarea {
       display: block;
       width: 100%;
@@ -366,6 +391,8 @@
       .copy-card strong { font-size: .85rem; }
       .copy-card-preview { font-size: .71rem; }
       .copy-card-action { right: 10px; }
+      .copy-data-tools { display: grid; grid-template-columns: minmax(0, 1fr); }
+      .copy-data-button { width: 100%; min-height: 44px; }
       .memo-editor textarea { min-height: 120px; font-size: .88rem; }
       .next-button { min-height: 44px; padding: 9px 12px; border-radius: 10px; }
 
@@ -486,7 +513,7 @@
 
   <script>
     const STORAGE_KEY = "livenova-closing-session-v1";
-    const sessionState = { candidateName: "", staffName: "", notes: {} };
+    const sessionState = { candidateName: "", staffName: "", notes: {}, copyItemsOverride: null };
     const mobileMedia = window.matchMedia("(max-width: 760px)");
     let activeNodeId = "opening";
 
@@ -885,6 +912,10 @@ LiveNova
       prestream: "blue", end: "green"
     };
 
+    const defaultCopyItems = DATA.nodes.prestream.copyItems.map(function (item, index) {
+      return { id: item.id || "copy-item-" + (index + 1), title: item.title, text: item.text };
+    });
+
     const escapeHtml = function (value) {
       return String(value)
         .replaceAll("&", "&amp;")
@@ -900,10 +931,12 @@ LiveNova
         sessionState.candidateName = typeof saved.candidateName === "string" ? saved.candidateName : "";
         sessionState.staffName = typeof saved.staffName === "string" ? saved.staffName : "";
         sessionState.notes = saved.notes && typeof saved.notes === "object" ? saved.notes : {};
+        sessionState.copyItemsOverride = Array.isArray(saved.copyItemsOverride) ? saved.copyItemsOverride : null;
       } catch (error) {
         sessionState.candidateName = "";
         sessionState.staffName = "";
         sessionState.notes = {};
+        sessionState.copyItemsOverride = null;
       }
     }
 
@@ -1023,13 +1056,149 @@ LiveNova
     }
 
     function copyItemsMarkup(items) {
+      const resetButton = sessionState.copyItemsOverride ?
+        '<button type="button" class="copy-data-button" data-reset-copy-csv>公開CSVに戻す</button>' : '';
       return '<div class="copy-card-list">' + items.map(function (item, index) {
         const preview = item.text.replace(/\s+/g, " ").trim().slice(0, 72);
         return '<button type="button" class="copy-card" data-copy-index="' + index + '">' +
           '<strong>' + escapeHtml(item.title) + '</strong>' +
           '<span class="copy-card-preview">' + escapeHtml(preview) + (item.text.length > 72 ? "…" : "") + '</span>' +
           '<span class="copy-card-action">コピー</span></button>';
-      }).join("") + '</div><p id="copyCardFeedback" class="copy-feedback" aria-live="polite"></p>';
+      }).join("") + '</div><p id="copyCardFeedback" class="copy-feedback" aria-live="polite"></p>' +
+        '<div class="copy-data-panel"><strong>CSVで項目を編集</strong>' +
+        '<p class="copy-data-note">1行が1つのコピー項目です。本文セル内の改行も使えます。読み込んだ内容はこの端末だけに保存され、共有版はGitHubから更新できます。</p>' +
+        '<div class="copy-data-tools"><a class="copy-data-button" href="copy-items.csv" download>CSVをダウンロード</a>' +
+        '<button type="button" class="copy-data-button primary" data-import-copy-csv>編集したCSVを読み込む</button>' + resetButton +
+        '<a class="copy-data-button" href="https://github.com/TsugaruShinuchi/livenova-closing-flowchart/edit/main/copy-items.csv" target="_blank" rel="noreferrer">共有版をGitHubで編集</a></div>' +
+        '<input class="copy-data-input" id="copyCsvInput" type="file" accept=".csv,text/csv">' +
+        '<p id="copyCsvStatus" class="copy-data-status" aria-live="polite"></p></div>';
+    }
+
+    function parseCsvRows(csvText) {
+      const source = String(csvText).replace(/^\uFEFF/, "");
+      const rows = [];
+      let row = [];
+      let cell = "";
+      let quoted = false;
+
+      for (let index = 0; index < source.length; index += 1) {
+        const character = source[index];
+        if (quoted) {
+          if (character === '"' && source[index + 1] === '"') {
+            cell += '"';
+            index += 1;
+          } else if (character === '"') {
+            quoted = false;
+          } else {
+            cell += character;
+          }
+        } else if (character === '"') {
+          quoted = true;
+        } else if (character === ",") {
+          row.push(cell);
+          cell = "";
+        } else if (character === "\n" || character === "\r") {
+          if (character === "\r" && source[index + 1] === "\n") index += 1;
+          row.push(cell);
+          if (row.some(function (value) { return value !== ""; })) rows.push(row);
+          row = [];
+          cell = "";
+        } else {
+          cell += character;
+        }
+      }
+      if (quoted) throw new Error("引用符が閉じられていません");
+      row.push(cell);
+      if (row.some(function (value) { return value !== ""; })) rows.push(row);
+      return rows;
+    }
+
+    function parseCopyItemsCsv(csvText) {
+      const rows = parseCsvRows(csvText);
+      if (rows.length < 2) throw new Error("コピー項目がありません");
+      const headers = rows[0].map(function (header) { return header.trim().toLowerCase(); });
+      const columnIndex = function (names) {
+        return headers.findIndex(function (header) { return names.includes(header); });
+      };
+      const orderIndex = columnIndex(["並び順", "order"]);
+      const idIndex = columnIndex(["id", "項目id"]);
+      const titleIndex = columnIndex(["表示名", "title"]);
+      const textIndex = columnIndex(["コピー本文", "text"]);
+      if (titleIndex < 0 || textIndex < 0) throw new Error("「表示名」と「コピー本文」の列が必要です");
+
+      const items = rows.slice(1).map(function (columns, index) {
+        const order = orderIndex >= 0 ? Number(columns[orderIndex]) : index + 1;
+        return {
+          order: Number.isFinite(order) ? order : index + 1,
+          id: (idIndex >= 0 && columns[idIndex] ? columns[idIndex].trim() : "copy-item-" + (index + 1)),
+          title: String(columns[titleIndex] || "").trim(),
+          text: String(columns[textIndex] || "").replaceAll("\\n", "\n").trim()
+        };
+      }).filter(function (item) {
+        return item.title && item.text;
+      }).sort(function (left, right) {
+        return left.order - right.order;
+      });
+
+      if (!items.length) throw new Error("有効なコピー項目がありません");
+      return items.map(function (item) {
+        return { id: item.id, title: item.title, text: item.text };
+      });
+    }
+
+    function applyCopyItems(items) {
+      DATA.nodes.prestream.copyItems = items.map(function (item, index) {
+        return {
+          id: item.id || "copy-item-" + (index + 1),
+          title: String(item.title || ""),
+          text: String(item.text || "")
+        };
+      });
+    }
+
+    async function loadPublishedCopyItems(force) {
+      if (sessionState.copyItemsOverride && !force) {
+        applyCopyItems(sessionState.copyItemsOverride);
+        return;
+      }
+      try {
+        const response = await fetch("copy-items.csv", { cache: "no-store" });
+        if (!response.ok) throw new Error("CSVを取得できませんでした");
+        applyCopyItems(parseCopyItemsCsv(await response.text()));
+        if (activeNodeId === "prestream") selectNode("prestream", false);
+      } catch (error) {
+        applyCopyItems(defaultCopyItems);
+        if (activeNodeId === "prestream") selectNode("prestream", false);
+      }
+    }
+
+    async function importCopyItemsCsv(input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      try {
+        const items = parseCopyItemsCsv(await file.text());
+        sessionState.copyItemsOverride = items;
+        saveSession();
+        applyCopyItems(items);
+        selectNode("prestream", false);
+        const status = document.getElementById("copyCsvStatus");
+        if (status) status.textContent = items.length + "件を読み込み、このブラウザに保存しました。";
+      } catch (error) {
+        const status = document.getElementById("copyCsvStatus");
+        if (status) status.textContent = "読み込めませんでした：" + error.message;
+      } finally {
+        input.value = "";
+      }
+    }
+
+    async function resetCopyItemsCsv() {
+      sessionState.copyItemsOverride = null;
+      saveSession();
+      applyCopyItems(defaultCopyItems);
+      selectNode("prestream", false);
+      await loadPublishedCopyItems(true);
+      const status = document.getElementById("copyCsvStatus");
+      if (status) status.textContent = "公開CSVの内容に戻しました。";
     }
 
     function selectNode(id, shouldNavigate) {
@@ -1177,6 +1346,17 @@ LiveNova
     }
 
     document.addEventListener("click", function (event) {
+      const importCsvButton = event.target.closest("[data-import-copy-csv]");
+      if (importCsvButton) {
+        const input = document.getElementById("copyCsvInput");
+        if (input) input.click();
+        return;
+      }
+      const resetCsvButton = event.target.closest("[data-reset-copy-csv]");
+      if (resetCsvButton) {
+        resetCopyItemsCsv();
+        return;
+      }
       const mobileBack = event.target.closest("[data-mobile-back]");
       if (mobileBack) {
         setMobileView("flow", true);
@@ -1203,6 +1383,10 @@ LiveNova
         saveSession();
         updateMemoIndicators();
       }
+    });
+
+    document.addEventListener("change", function (event) {
+      if (event.target.id === "copyCsvInput") importCopyItemsCsv(event.target);
     });
 
     document.getElementById("candidateName").addEventListener("input", function (event) {
@@ -1233,6 +1417,7 @@ LiveNova
     });
 
     loadSession();
+    if (sessionState.copyItemsOverride) applyCopyItems(sessionState.copyItemsOverride);
     document.getElementById("candidateName").value = sessionState.candidateName;
     document.getElementById("staffName").value = sessionState.staffName;
     const initialId = location.hash.slice(1);
@@ -1241,6 +1426,7 @@ LiveNova
     updateMemoIndicators();
     selectNode(hasInitialNode ? initialId : "opening", false);
     setMobileView(hasInitialNode ? "detail" : "flow", false);
+    loadPublishedCopyItems(false);
   </script>
 </body>
 </html>
