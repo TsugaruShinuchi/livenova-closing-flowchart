@@ -1,0 +1,1246 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="LiveNovaのクロージングスクリプトを分岐ごとに確認できるフローチャート">
+  <title>LiveNova クロージング・フローナビ</title>
+  <style>
+    :root {
+      --ink: #112a46;
+      --muted: #65758a;
+      --line: #d8e2ec;
+      --paper: #fff;
+      --canvas: #f4f7fb;
+      --navy: #0d335d;
+      --blue: #2477b5;
+      --blue-soft: #eaf4fb;
+      --green: #258162;
+      --green-soft: #eaf7f1;
+      --purple: #6a58ad;
+      --purple-soft: #f1eefb;
+      --amber: #a96800;
+      --amber-soft: #fff5de;
+      --red: #a62d39;
+      --red-soft: #fff0f2;
+      --teal: #167e86;
+      --teal-soft: #e9f7f7;
+      --shadow: 0 15px 38px rgb(21 51 82 / 9%);
+      --font: "Yu Gothic UI", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--ink); background: var(--canvas); font-family: var(--font); font-size: 16px; line-height: 1.7; }
+    button, a { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      min-height: 72px;
+      padding: 12px clamp(18px, 3vw, 44px);
+      border-bottom: 1px solid var(--line);
+      background: rgb(255 255 255 / 94%);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 12px; color: #fff; background: var(--navy); font-weight: 900; }
+    .brand p { margin: 0; color: var(--blue); font-size: .75rem; font-weight: 800; letter-spacing: .12em; }
+    .brand h1 { margin: 0; font-size: 1.15rem; line-height: 1.35; letter-spacing: -.02em; }
+    .source-link { padding: 7px 12px; border: 1px solid var(--line); border-radius: 9px; color: #35516d; background: #fff; font-size: .85rem; font-weight: 700; text-decoration: none; }
+    .source-link:hover { background: #eef4f8; }
+
+    .notice {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px clamp(18px, 3vw, 44px);
+      border-bottom: 1px solid #ead39d;
+      color: #71530c;
+      background: #fff8df;
+      font-size: .85rem;
+    }
+    .notice strong { white-space: nowrap; }
+
+    .session-bar {
+      display: flex;
+      align-items: end;
+      gap: 14px;
+      padding: 14px clamp(18px, 3vw, 44px);
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+    .session-field { display: grid; flex: 1 1 220px; gap: 5px; max-width: 320px; }
+    .session-field span { color: #53677d; font-size: .74rem; font-weight: 850; letter-spacing: .04em; }
+    .session-field input {
+      width: 100%;
+      padding: 9px 11px;
+      border: 1px solid #b9c8d6;
+      border-radius: 9px;
+      color: var(--ink);
+      background: #fbfdff;
+      font: inherit;
+    }
+    .session-field input:focus, .memo-editor textarea:focus, .export-textarea:focus {
+      outline: 3px solid rgb(36 119 181 / 18%);
+      border-color: var(--blue);
+    }
+    .session-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+    .memo-count { color: var(--muted); font-size: .8rem; font-weight: 800; white-space: nowrap; }
+    .export-button, .dialog-button {
+      padding: 9px 13px;
+      border: 1px solid var(--navy);
+      border-radius: 9px;
+      color: #fff;
+      background: var(--navy);
+      font-size: .84rem;
+      font-weight: 850;
+    }
+    .export-button:hover, .dialog-button:hover { background: #174a79; }
+    .dialog-button.secondary { color: #35516d; background: #fff; border-color: #aebdcc; }
+    .dialog-button.secondary:hover { background: #eef4f8; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(360px, .75fr);
+      align-items: start;
+      gap: 24px;
+      max-width: 1560px;
+      margin: 0 auto;
+      padding: 28px clamp(18px, 3vw, 44px) 64px;
+    }
+
+    .flow-shell, .detail-panel {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+    .flow-shell { padding: clamp(18px, 2.4vw, 30px); }
+    .section-kicker { margin: 0; color: var(--blue); font-size: .75rem; font-weight: 850; letter-spacing: .13em; }
+    .flow-heading { margin: 3px 0 5px; font-size: clamp(1.45rem, 2vw, 2rem); line-height: 1.35; letter-spacing: -.035em; }
+    .flow-intro { margin: 0 0 24px; color: var(--muted); font-size: .9rem; }
+
+    .flow-map { display: flex; flex-direction: column; align-items: stretch; }
+    .flow-stage { padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: #fbfcfe; }
+    .flow-stage-label { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; color: #53677d; font-size: .8rem; font-weight: 800; list-style: none; cursor: pointer; }
+    .flow-stage-label::-webkit-details-marker { display: none; }
+    .flow-stage-label > .stage-number { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 8px; color: #fff; background: var(--navy); font-size: .72rem; }
+    .stage-chevron { display: none; margin-left: auto; color: #75869a; font-size: 1.2rem; line-height: 1; transition: transform .2s ease; }
+    .flow-stage[open] .stage-chevron { transform: rotate(90deg); }
+    .flow-row { display: flex; align-items: stretch; gap: 10px; }
+    .flow-row .chart-node { flex: 1 1 0; }
+    .row-arrow { display: grid; flex: 0 0 24px; place-items: center; color: #8c9bab; font-size: 1.25rem; font-weight: 900; }
+    .stage-arrow { display: grid; height: 36px; place-items: center; color: #718398; font-size: 1.45rem; font-weight: 900; }
+
+    .chart-node {
+      min-width: 0;
+      min-height: 78px;
+      padding: 13px 14px;
+      border: 1px solid var(--node);
+      border-left-width: 4px;
+      border-radius: 11px;
+      color: var(--ink);
+      text-align: left;
+      background: var(--node-soft);
+      transition: transform .16s ease, box-shadow .16s ease;
+    }
+    .chart-node:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgb(26 59 92 / 12%); }
+    .chart-node:focus-visible { outline: 3px solid rgb(36 119 181 / 28%); outline-offset: 2px; }
+    .chart-node[aria-pressed="true"] { color: #fff; background: var(--node); box-shadow: 0 8px 20px rgb(24 55 88 / 18%); }
+    .chart-node small { display: block; margin-bottom: 3px; color: var(--node); font-size: .7rem; font-weight: 900; letter-spacing: .09em; }
+    .chart-node[aria-pressed="true"] small { color: #fff; }
+    .chart-node strong { display: block; font-size: .93rem; line-height: 1.45; }
+    .chart-node.has-memo { box-shadow: inset 0 0 0 2px rgb(255 255 255 / 75%), 0 0 0 2px var(--node); }
+    .memo-badge { display: inline-block; margin-top: 7px; padding: 2px 7px; border-radius: 99px; color: #fff; background: var(--node); font-size: .66rem; font-weight: 850; }
+    .chart-node[aria-pressed="true"] .memo-badge { color: var(--node); background: #fff; }
+    .tone-blue { --node: var(--blue); --node-soft: var(--blue-soft); }
+    .tone-green { --node: var(--green); --node-soft: var(--green-soft); }
+    .tone-purple { --node: var(--purple); --node-soft: var(--purple-soft); }
+    .tone-amber { --node: var(--amber); --node-soft: var(--amber-soft); }
+    .tone-red { --node: var(--red); --node-soft: var(--red-soft); }
+    .tone-teal { --node: var(--teal); --node-soft: var(--teal-soft); }
+
+    .decision-main { display: grid; width: min(280px, 100%); min-height: 92px; place-content: center; margin: 0 auto 18px; padding: 18px 42px; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); color: #fff; text-align: center; background: var(--navy); border: 0; }
+    .decision-main small { color: #b9d7ed; }
+    .decision-main[aria-pressed="true"] { background: var(--blue); }
+    .branches { display: grid; grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr)); gap: 13px; }
+    .branch { position: relative; padding: 13px; border-top: 2px solid #b8c6d3; background: #fff; }
+    .branch-label { display: block; margin-bottom: 8px; color: #607187; font-size: .75rem; font-weight: 850; text-align: center; }
+    .branch .chart-node { width: 100%; }
+    .branch .chart-node + .chart-node { margin-top: 8px; }
+    .merge-cue { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 15px; color: #6c7d90; font-size: .77rem; font-weight: 800; text-align: center; }
+    .merge-cue::before, .merge-cue::after { content: ""; width: 34px; border-top: 1px solid #b4c0cd; }
+
+    .detail-panel {
+      position: sticky;
+      top: 96px;
+      overflow: hidden;
+      padding: 12px;
+      background: rgb(255 255 255 / 86%);
+    }
+    .detail-head {
+      padding: 20px 20px 21px;
+      border: 1px solid rgb(255 255 255 / 22%);
+      border-radius: 15px;
+      color: #fff;
+      background: linear-gradient(145deg, #0d335d 0%, #164b7c 100%);
+      box-shadow: 0 10px 24px rgb(13 51 93 / 18%);
+    }
+    .detail-head p { margin: 0; color: #c3deef; font-size: .74rem; font-weight: 850; letter-spacing: .1em; }
+    .detail-head > p:first-of-type { display: inline-flex; align-items: center; min-height: 25px; padding: 3px 8px; border: 1px solid rgb(255 255 255 / 18%); border-radius: 99px; background: rgb(255 255 255 / 10%); }
+    .detail-head h2 { margin: 9px 0 7px; font-size: 1.35rem; line-height: 1.35; letter-spacing: -.025em; overflow-wrap: anywhere; text-wrap: balance; }
+    .detail-head .summary { margin: 0; color: #e8f2f8; font-size: .86rem; line-height: 1.6; letter-spacing: 0; }
+    .detail-body { max-height: calc(100vh - 272px); overflow-y: auto; padding: 19px 8px 10px; }
+    .detail-block + .detail-block { margin-top: 20px; padding-top: 18px; border-top: 1px solid #e5ebf1; }
+    .detail-block h3 { margin: 0 0 9px; color: #445970; font-size: .78rem; letter-spacing: .06em; }
+    .script-list, .point-list, .warning-list { display: flex; flex-direction: column; gap: 9px; margin: 0; padding: 0; list-style: none; }
+    .script-list li { padding: 12px 14px; border-left: 4px solid var(--blue); border-radius: 0 9px 9px 0; color: #24415f; background: var(--blue-soft); font-size: .9rem; }
+    .point-list li, .warning-list li { position: relative; padding-left: 18px; color: #42566d; font-size: .88rem; }
+    .point-list li::before, .warning-list li::before { content: ""; position: absolute; top: .72em; left: 2px; width: 6px; height: 6px; border-radius: 99px; background: var(--green); }
+    .warning-box { padding: 13px 14px; border: 1px solid #efbec4; border-radius: 10px; background: var(--red-soft); }
+    .warning-box h3 { color: var(--red); }
+    .warning-list li::before { background: var(--red); }
+    .next-links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .next-button { padding: 8px 11px; border: 1px solid #9ebbd0; border-radius: 8px; color: #245e87; background: #f4f9fc; font-size: .8rem; font-weight: 800; }
+    .next-button:hover { background: #e6f2f9; }
+    .detail-empty { padding: 32px 24px; color: var(--muted); }
+    .copy-card-list { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: 10px; }
+    .copy-card {
+      position: relative;
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+      width: 100%;
+      padding: 13px 82px 13px 14px;
+      border: 1px solid #bdd1df;
+      border-radius: 11px;
+      color: #24415f;
+      text-align: left;
+      background: #f5fafe;
+      transition: border-color .16s ease, transform .16s ease, background .16s ease;
+    }
+    .copy-card:hover { transform: translateY(-1px); border-color: var(--blue); background: var(--blue-soft); }
+    .copy-card:focus-visible { outline: 3px solid rgb(36 119 181 / 22%); outline-offset: 2px; }
+    .copy-card strong { display: block; min-width: 0; font-size: .9rem; line-height: 1.45; overflow-wrap: anywhere; }
+    .copy-card-preview { display: block; overflow: hidden; margin-top: 4px; color: #60758a; font-size: .76rem; line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }
+    .copy-card-action { position: absolute; top: 50%; right: 12px; padding: 4px 8px; border-radius: 99px; color: #fff; background: var(--blue); font-size: .68rem; font-weight: 850; transform: translateY(-50%); }
+    .copy-card.copied { border-color: var(--green); background: var(--green-soft); }
+    .copy-card.copied .copy-card-action { background: var(--green); }
+    .copy-feedback { min-height: 1.4em; margin: 8px 0 0; color: var(--green); font-size: .76rem; font-weight: 800; }
+    .memo-editor textarea {
+      display: block;
+      width: 100%;
+      min-height: 138px;
+      resize: vertical;
+      padding: 12px 13px;
+      border: 1px solid #b9c8d6;
+      border-radius: 10px;
+      color: var(--ink);
+      background: #fffdf7;
+      font: inherit;
+      font-size: .9rem;
+      line-height: 1.65;
+    }
+    .save-hint { margin: 6px 0 0; color: var(--muted); font-size: .73rem; }
+
+    .export-dialog {
+      width: min(720px, calc(100vw - 32px));
+      max-height: calc(100vh - 40px);
+      padding: 0;
+      border: 0;
+      border-radius: 16px;
+      color: var(--ink);
+      background: #fff;
+      box-shadow: 0 24px 70px rgb(13 51 93 / 24%);
+    }
+    .export-dialog::backdrop { background: rgb(10 29 49 / 52%); backdrop-filter: blur(3px); }
+    .dialog-head { padding: 20px 22px 14px; border-bottom: 1px solid var(--line); }
+    .dialog-head h2 { margin: 0; font-size: 1.2rem; }
+    .dialog-head p { margin: 4px 0 0; color: var(--muted); font-size: .82rem; }
+    .dialog-body { padding: 18px 22px 22px; }
+    .export-textarea { width: 100%; min-height: 360px; resize: vertical; padding: 13px; border: 1px solid #b9c8d6; border-radius: 10px; color: #203c58; background: #f8fafc; font: 13px/1.65 ui-monospace, "Cascadia Code", monospace; }
+    .dialog-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-top: 12px; }
+    .copy-status { margin-left: auto; color: var(--green); font-size: .8rem; font-weight: 800; }
+    .mobile-back, .mobile-tabbar { display: none; }
+
+    @media (max-width: 1040px) {
+      .workspace { grid-template-columns: 1fr; }
+      .detail-panel { position: static; }
+      .detail-body { max-height: none; }
+    }
+    @media (max-width: 760px) {
+      :root { font-size: 16px; }
+      body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); background: #f2f2f7; -webkit-tap-highlight-color: transparent; }
+      button, a, input, textarea { touch-action: manipulation; }
+
+      .topbar {
+        min-height: 56px;
+        padding: 8px 14px;
+        gap: 10px;
+        border-bottom-color: rgb(216 226 236 / 65%);
+        background: rgb(255 255 255 / 78%);
+        backdrop-filter: blur(20px) saturate(180%);
+      }
+      .brand { min-width: 0; gap: 9px; }
+      .brand-mark { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 10px; font-size: .86rem; }
+      .brand p { display: none; }
+      .brand h1 { overflow: hidden; font-size: .98rem; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+      .source-link { flex: 0 0 auto; padding: 6px 9px; border-radius: 8px; font-size: .7rem; }
+
+      .notice {
+        align-items: flex-start;
+        margin: 10px 12px 0;
+        padding: 10px 12px;
+        border: 0;
+        border-radius: 12px;
+        font-size: .73rem;
+        line-height: 1.5;
+      }
+      .notice strong { padding-top: 1px; }
+
+      .session-bar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 10px;
+        margin: 10px 12px 0;
+        padding: 12px;
+        border: 0;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgb(25 48 72 / 4%);
+      }
+      .session-field { min-width: 0; max-width: none; gap: 4px; }
+      .session-field span { font-size: .69rem; }
+      .session-field input { min-height: 44px; padding: 9px 10px; border-color: #d2dae3; border-radius: 10px; font-size: .9rem; background: #f7f8fa; }
+      .session-actions { grid-column: 1 / -1; justify-content: space-between; width: 100%; margin: 0; }
+      .export-button { min-height: 44px; padding-inline: 16px; border: 0; border-radius: 11px; }
+
+      .workspace { display: block; padding: 12px; }
+      .flow-shell, .detail-panel { border: 0; border-radius: 20px; box-shadow: 0 1px 2px rgb(25 48 72 / 4%), 0 10px 32px rgb(25 48 72 / 6%); scroll-margin-top: 68px; }
+      .flow-shell { padding: 16px 14px 18px; }
+      .section-kicker { font-size: .66rem; letter-spacing: .1em; }
+      .flow-heading { margin-top: 2px; font-size: 1.35rem; line-height: 1.22; letter-spacing: -.025em; }
+      .flow-intro { margin-bottom: 16px; font-size: .8rem; line-height: 1.55; }
+
+      body[data-mobile-view="detail"] .flow-shell { display: none; }
+      body[data-mobile-view="flow"] .detail-panel { display: none; }
+
+      .flow-map { gap: 8px; }
+      .flow-stage { padding: 0; overflow: hidden; border-color: #e1e6ec; border-radius: 14px; background: #fff; }
+      .flow-stage-label { min-height: 54px; margin: 0; padding: 10px 12px; font-size: .82rem; line-height: 1.3; }
+      .flow-stage-label > .stage-number { width: 30px; height: 30px; border-radius: 9px; }
+      .stage-chevron { display: block; }
+      .flow-stage-content { padding: 4px 10px 12px; }
+      .stage-arrow { display: none; }
+      .flow-row { flex-direction: column; gap: 6px; }
+      .row-arrow { height: 18px; flex-basis: 18px; font-size: 0; }
+      .row-arrow::after { content: "↓"; color: #9aa8b6; font-size: 1rem; }
+      .branches { grid-template-columns: 1fr; gap: 8px; }
+      .branch { padding: 8px 0 0; border-top-color: #d9e1e9; }
+      .branch-label { margin-bottom: 6px; font-size: .7rem; }
+      .decision-main { width: min(250px, 88%); min-height: 82px; margin-bottom: 12px; padding: 16px 38px; }
+      .chart-node { min-height: 64px; padding: 11px 12px; border-radius: 12px; }
+      .chart-node strong { font-size: .88rem; }
+      .chart-node:active, .copy-card:active, .next-button:active, .export-button:active, .mobile-back:active { transform: scale(.975); transition-duration: .08s; }
+
+      .detail-panel { position: static; overflow: visible; padding: 10px; background: rgb(255 255 255 / 88%); }
+      .detail-head { position: relative; padding: 13px 15px 17px; border-radius: 16px; }
+      .detail-head h2 { margin-top: 8px; font-size: 1.24rem; line-height: 1.38; }
+      .detail-head .summary { font-size: .82rem; line-height: 1.55; }
+      .mobile-back { display: inline-flex; align-items: center; min-height: 36px; margin: -4px 0 7px -6px; padding: 4px 8px; border: 0; border-radius: 9px; color: #d9ecf8; background: transparent; font-size: .78rem; font-weight: 800; }
+      .detail-body { max-height: none; padding: 16px 5px 10px; }
+      .detail-block + .detail-block { margin-top: 16px; padding-top: 15px; }
+      .script-list li { padding: 11px 12px; font-size: .86rem; line-height: 1.65; }
+      .point-list li, .warning-list li { font-size: .83rem; }
+      .copy-card-list { gap: 8px; }
+      .copy-card { min-height: 60px; padding: 11px 72px 11px 12px; border-radius: 12px; }
+      .copy-card strong { font-size: .85rem; }
+      .copy-card-preview { font-size: .71rem; }
+      .copy-card-action { right: 10px; }
+      .memo-editor textarea { min-height: 120px; font-size: .88rem; }
+      .next-button { min-height: 44px; padding: 9px 12px; border-radius: 10px; }
+
+      .mobile-tabbar {
+        position: fixed;
+        right: 12px;
+        bottom: calc(10px + env(safe-area-inset-bottom));
+        left: 12px;
+        z-index: 40;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        padding: 5px;
+        border: 1px solid rgb(255 255 255 / 70%);
+        border-radius: 18px;
+        background: rgb(247 249 252 / 78%);
+        box-shadow: 0 10px 30px rgb(13 39 65 / 17%);
+        backdrop-filter: blur(22px) saturate(180%);
+      }
+      .mobile-tabbar button { min-height: 48px; border: 0; border-radius: 13px; color: #68798a; background: transparent; font-size: .8rem; font-weight: 850; }
+      .mobile-tabbar button[aria-current="page"] { color: #fff; background: var(--navy); box-shadow: 0 3px 10px rgb(13 51 93 / 20%); }
+
+      .export-dialog { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); border-radius: 20px; }
+      .dialog-head { padding: 17px 17px 12px; }
+      .dialog-body { padding: 14px 17px 17px; }
+      .export-textarea { min-height: min(48dvh, 420px); }
+      .dialog-actions { display: grid; grid-template-columns: 1fr 1fr; }
+      .dialog-button { min-height: 44px; }
+      .dialog-button.secondary { grid-column: 1 / -1; }
+      .copy-status { grid-column: 1 / -1; margin: 0; text-align: center; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      .topbar, .mobile-tabbar { background: #fff; backdrop-filter: none; }
+    }
+    @media (prefers-contrast: more) {
+      .flow-shell, .detail-panel, .session-bar, .flow-stage { border: 1px solid #7d8d9d; }
+      .mobile-tabbar { border-color: #7d8d9d; background: #fff; }
+    }
+    @media print {
+      .topbar, .notice { position: static; }
+      .session-actions { display: none; }
+      .workspace { display: block; max-width: none; padding: 10mm; }
+      .detail-panel { margin-top: 12mm; box-shadow: none; }
+      .flow-shell { box-shadow: none; }
+      .detail-body { max-height: none; }
+    }
+  </style>
+</head>
+<body data-mobile-view="flow">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">L</span>
+      <div>
+        <p>LIVE NOVA INTERVIEW GUIDE</p>
+        <h1>クロージング・フローナビ</h1>
+      </div>
+    </div>
+    <a class="source-link" href="https://wind-carp-e78.notion.site/3d695099311f808781e9fa9c87d83d5e?source=copy_link" target="_blank" rel="noreferrer">Notion原本 ↗</a>
+  </header>
+
+  <div class="notice" role="note">
+    <strong>面談前に確認</strong>
+    <span>報酬額・ボーナス条件・イベント日時・申請日数は、必ず最新の正式資料を優先してください。</span>
+  </div>
+
+  <section class="session-bar" aria-label="面談情報">
+    <label class="session-field">
+      <span>お名前</span>
+      <input id="candidateName" type="text" autocomplete="name" placeholder="例：山田 花子">
+    </label>
+    <label class="session-field">
+      <span>担当者</span>
+      <input id="staffName" type="text" placeholder="例：佐藤">
+    </label>
+    <div class="session-actions">
+      <span id="memoCount" class="memo-count">メモ 0件</span>
+      <button id="exportNotesButton" class="export-button" type="button">メモを出力</button>
+    </div>
+  </section>
+
+  <main class="workspace">
+    <section class="flow-shell" aria-labelledby="flowTitle">
+      <p class="section-kicker">INTERACTIVE FLOWCHART</p>
+      <h2 id="flowTitle" class="flow-heading">面談の流れを選ぶ</h2>
+      <p class="flow-intro">各ボックスを選択するとトーク例と担当者メモが開きます。</p>
+      <div id="flowMap" class="flow-map" aria-label="クロージング面談フローチャート"></div>
+    </section>
+
+    <aside id="detailPanel" class="detail-panel" aria-live="polite" aria-label="選択した項目の詳細">
+      <div class="detail-empty">フローチャートから項目を選択してください。</div>
+    </aside>
+  </main>
+
+  <nav class="mobile-tabbar" aria-label="画面切り替え">
+    <button type="button" data-mobile-view-target="flow" aria-current="page">フロー</button>
+    <button type="button" data-mobile-view-target="detail">詳細</button>
+  </nav>
+
+  <dialog id="exportDialog" class="export-dialog" aria-labelledby="exportTitle">
+    <div class="dialog-head">
+      <h2 id="exportTitle">面談メモを出力</h2>
+      <p>各フローで入力したメモを、Markdown形式でまとめています。</p>
+    </div>
+    <div class="dialog-body">
+      <textarea id="exportTextarea" class="export-textarea" readonly aria-label="出力する面談メモ"></textarea>
+      <div class="dialog-actions">
+        <button id="copyExportButton" class="dialog-button" type="button">コピー</button>
+        <button id="downloadExportButton" class="dialog-button" type="button">.mdをダウンロード</button>
+        <button id="closeExportButton" class="dialog-button secondary" type="button">閉じる</button>
+        <span id="copyStatus" class="copy-status" aria-live="polite"></span>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    const STORAGE_KEY = "livenova-closing-session-v1";
+    const sessionState = { candidateName: "", staffName: "", notes: {} };
+    const mobileMedia = window.matchMedia("(max-width: 760px)");
+    let activeNodeId = "opening";
+
+    const DATA = {
+      nodes: {
+        opening: {
+          stage: "01 START",
+          title: "挨拶・自己紹介",
+          summary: "音声確認、担当者名、呼び方、面談内容を短く案内します。",
+          scripts: [
+            "もしもし、音声は聞こえておりますでしょうか？",
+            "初めまして。LiveNovaのマネージャーの［担当者名］と申します。本日はお時間を作ってくださり、ありがとうございます。",
+            "［お名前］さんとお呼びしてもよろしいですか？",
+            "本日は、ライブ配信やSNSのご経験を伺いながら、Palmuと事務所についてご説明できればと思います。"
+          ],
+          points: ["相手の返答を待つ", "呼び方を確定する", "一方的な説明から始めない"],
+          next: ["hearing"]
+        },
+        hearing: {
+          stage: "01 HEARING",
+          title: "期待・目的・不安を聞く",
+          summary: "この回答を、後半のPalmu説明と事務所説明の中核にします。",
+          scripts: [
+            "今回、［スカウトを受けた媒体］でスカウトを受け取られたと思うのですが、どのあたりに興味を持っていただけましたか？",
+            "配信経験者：配信はどういったことを目的でされていますか？",
+            "配信未経験者：どういった目的で配信を始めたいですか？",
+            "ライバー事務所に入られたことはありますか？",
+            "所属経験あり：やめられた理由は何でしたか？",
+            "所属経験なし：ライバー事務所と聞いて、事前に不安なことはありますか？"
+          ],
+          points: [
+            "目的：収入／ファン獲得／人と話したい、など",
+            "不安：サポート／イベント／契約期間・違約金／ノルマ、など",
+            "本人が使った言葉をメモし、後の説明で引用する"
+          ],
+          next: ["palmuRoute"]
+        },
+        palmuRoute: {
+          stage: "02 DECISION",
+          title: "Palmu経験を確認",
+          summary: "基本カルテまたは本人の回答から、説明を省略・調整します。",
+          scripts: ["Palmuで配信した経験や、事務所へ所属した経験はありますか？"],
+          points: ["経験あり・事務所経験ありなら、基本説明を省略できる", "経験者には現在活動中かどうかも確認する"],
+          next: ["knownActive", "knownInactive", "palmuNew"]
+        },
+        knownActive: {
+          stage: "02 EXPERIENCED",
+          title: "経験あり・現在も配信中",
+          summary: "アプリ説明を短縮し、改めて事務所に関心を持った理由を確認します。",
+          scripts: ["改めて事務所に興味を持っていただけた理由は何でしょうか？"],
+          points: ["既存の活動やファンとの関係で守りたい条件を確認", "現在困っている点に絞って事務所メリットを説明"],
+          next: ["palmuFit"]
+        },
+        knownInactive: {
+          stage: "02 EXPERIENCED",
+          title: "経験あり・現在は休止中",
+          summary: "辞めた理由を確認し、同じ障害を繰り返さない提案につなげます。",
+          scripts: ["配信をやめられた理由を聞いても大丈夫ですか？"],
+          points: ["時間・収益・人間関係・サポートのどれが主因かを整理", "再開するなら変えたい条件を確認"],
+          next: ["palmuFit"]
+        },
+        palmuNew: {
+          stage: "02 PALMU",
+          title: "Palmuを知らない",
+          summary: "Palmuの3つの特徴を、ヒアリングで得た目的に合わせて説明します。",
+          scripts: [
+            "Palmuは国内で運営されているライブ配信アプリです。",
+            "特徴は大きく、①リスナーとの距離が近い、②親しみやすさでファンを獲得しやすい、③収益化につなげやすい、の3点です。",
+            "TikTokやYouTubeのような大人数向けというより、常連さんとの関係を深めながら活動するイメージです。"
+          ],
+          points: [
+            "収入目的：最初は週14時間・月60時間が活動目安。安定後は週10時間程度を目安として説明",
+            "収益説明：初月3〜5万円・Bランク相当を目標として紹介",
+            "他アプリ経験者：Pococha／17LIVE／ミクチャとの違いを事前に整理"
+          ],
+          warnings: [
+            "CM・同時接続人数・報酬目標は最新の事実と社内基準を確認する",
+            "「誰でも人気」「比較的容易」などを成果保証として受け取られない表現にする",
+            "配信時間は所属ノルマではなく活動目安であることを明示する"
+          ],
+          next: ["palmuFit"]
+        },
+        palmuFit: {
+          stage: "02 CHECK",
+          title: "配信イメージを確認",
+          summary: "Palmuの説明を終えたら、合う点と残る懸念を本人の言葉で確認します。",
+          scripts: ["ここまでで、ご自身の配信をイメージできそうでしょうか？合いそうなところと、まだ気になるところを教えてください。"],
+          points: [
+            "必要に応じて短時間配信・収益・他アプリ比較を補足",
+            "所属 → 新人講習会 → 枠周り → 初配信 → new 7 day → C2 → new 30 day → B1 の流れを説明"
+          ],
+          next: ["liveNova"]
+        },
+        liveNova: {
+          stage: "03 LIVE NOVA",
+          title: "所属メリットを説明",
+          summary: "ヒアリングで出た不安に対応するメリットを中心に説明します。",
+          scripts: [
+            "LiveNovaは株式会社PYXISが運営する、Palmuと直接契約している公式ライバー事務所です。",
+            "所属する方一人ひとりにマネージャーがつき、配信内容・スケジュール・目標を相談しながら進めます。",
+            "［お名前］さんは、マネージャーからどんなサポートを受けたいですか？",
+            "［お名前］さんの場合なら、［本人の目的や目標］について、［配信内容・時間の組み方など］から一緒に考えたいです。"
+          ],
+          points: [
+            "毎週の新人講習会",
+            "事務所限定イベント、グッズ、広告掲載、Award、ファンミーティング",
+            "所属費用・マネジメント料をライバーから受け取らない",
+            "事務所は発掘・育成の対価をPalmu側から受け取る"
+          ],
+          warnings: ["イベント内容・開催曜日・費用条件は最新版を確認する", "個人活動と所属活動の報酬条件は正式資料で確認する"],
+          next: ["bonusCheck"]
+        },
+        bonusCheck: {
+          stage: "03 DECISION",
+          title: "Palmu未経験か確認",
+          summary: "事務所ボーナスはPalmu未経験者だけに案内します。",
+          scripts: ["改めて、Palmuでの配信経験はありますか？"],
+          points: ["経験者にはボーナスを案内しない", "未経験者には最新版のボーナス資料を画面共有する"],
+          next: ["bonus", "bonusSkip"]
+        },
+        bonus: {
+          stage: "03 BONUS",
+          title: "未経験者へボーナス説明",
+          summary: "Palmu未経験者へ、活躍に応じた事務所ボーナスを説明します。",
+          scripts: [
+            "未経験者限定で、［お名前］さんの活躍に応じてPalmuから得た収益を、事務所ボーナスとして還元しています。",
+            "ボーナス資料を共有し、到達条件と期間を説明します。"
+          ],
+          points: ["1か月目Bランク到達：1万円", "2か月目もランク維持：追加2万円・計3万円", "30日／60日以内のAランク到達ボーナス"],
+          warnings: ["金額・ランク・期間・対象条件は必ず最新資料を優先する", "「事務所1位」など比較優位の主張は根拠を確認する"],
+          next: ["closing"]
+        },
+        bonusSkip: {
+          stage: "03 SKIP",
+          title: "経験者はボーナス説明を省略",
+          summary: "Palmu配信経験者には未経験者向けボーナスを案内せず、クロージングへ進みます。",
+          points: ["配信経験の判定に迷う場合は、その場で断定せず確認する"],
+          next: ["closing"]
+        },
+        closing: {
+          stage: "04 DECISION",
+          title: "感触・意向を確認",
+          summary: "説明を終え、本人の反応に応じて3方向へ分岐します。",
+          scripts: ["ここまで聞いてみて、ご感触はいかがですか？"],
+          points: ["返答に困る", "もう少し考えたい", "始めてみたい"],
+          next: ["uncertain", "consider", "ready"]
+        },
+        uncertain: {
+          stage: "04 UNCERTAIN",
+          title: "返答に困っている",
+          summary: "抽象的な返答のまま進めず、始めたい気持ちがあるかを確認します。",
+          scripts: ["始めてみたい、やってみたいという気持ちにはなりましたか？"],
+          points: ["Yes／Noを迫るのではなく、どこが判断しづらいかも聞く", "迷いが言語化できたら「もう少し考えたい」へ"],
+          next: ["consider", "ready"]
+        },
+        consider: {
+          stage: "04 CONCERN",
+          title: "もう少し考えたい",
+          summary: "気になる点を一つに絞り、懸念別に対応します。",
+          scripts: ["どの辺が気になっていますか？"],
+          points: [
+            "時間：生活リズムを聞き、確保できる時間からスモールスタートの計画を立てる",
+            "うまくできるか不安：マネージャー支援と、距離の近さ・地道な活動で伸ばす考え方を説明",
+            "その場で解決できない：解決策を準備し、再面談の日時まで決める"
+          ],
+          warnings: ["不安を押し切って所属手続きへ進めない", "解決できない条件を推測で回答しない"],
+          next: ["closing"]
+        },
+        ready: {
+          stage: "04 READY",
+          title: "始めてみたい",
+          summary: "本人の目的をもう一度引用し、条件確認後に所属意思を確認します。",
+          scripts: [
+            "ありがとうございます。［本人が話した目的］に向けて、一緒に進めていけたらうれしいです。",
+            "始めるにあたって、まだ確認しておきたいことはありませんか？",
+            "費用・契約条件・報酬の説明をご確認いただいたうえで、LiveNovaへの所属手続きを進めるご意向でよろしいでしょうか？"
+          ],
+          points: ["本人の目的を引用する", "費用・契約・報酬の理解を再確認する", "明確な同意後にだけ手続きへ進む"],
+          next: ["timeCheck"]
+        },
+        timeCheck: {
+          stage: "05 DECISION",
+          title: "このまま手続きできるか",
+          summary: "残り時間によって、面談内で進めるか、必要事項を送って後日進めるかを分けます。",
+          scripts: ["このあと、お手続きの説明を聞くお時間はありますか？"],
+          next: ["procedureNow", "procedureLater"]
+        },
+        procedureNow: {
+          stage: "05 NOW",
+          title: "時間がある",
+          summary: "必要事項を送り、その場で記載してもらって所属手続きへ進みます。",
+          scripts: ["ありがとうございます。所属にあたって必要な事項をお送りするので、そちらをご記載いただけたらと思います。"],
+          points: ["所属手続きの案内へ進む", "記載中は自然な雑談で関係を深める"],
+          next: ["procedure"]
+        },
+        procedureLater: {
+          stage: "05 LATER",
+          title: "時間がない",
+          summary: "必要事項と公式LINEを送り、初配信日・講習会・次回面談を具体化します。",
+          scripts: [
+            "所属に必要な事項と公式LINEをお送りします。LINE追加後にスタンプをお送りください。",
+            "また、初配信日はいつ頃にしましょうか？",
+            "初配信前に新人講習会を受けていただきたいのですが、ご都合はいかがでしょうか？"
+          ],
+          points: [
+            "必要事項の提出期限を合意する",
+            "初配信日をできる限り決める",
+            "講習会に参加可能：フォーム回答・当日URL・参加後面談",
+            "参加困難：個別講習の日程設定、または攻略資料を案内"
+          ],
+          warnings: ["申請完了までの日数や講習会の曜日・時間は最新版を確認する", "相手の期待値による対応差は、社内基準に沿って判断する"],
+          next: ["procedure"]
+        },
+        procedure: {
+          stage: "05 PROCEDURE",
+          title: "所属手続き",
+          summary: "Palmu登録と公式LINE追加、必要事項の記載を進めます。",
+          scripts: [
+            "では、LiveNovaへの所属手続きの流れをご案内します。",
+            "Palmuのインストールとアカウント登録をお願いします。",
+            "インストールの間に公式LINEを追加し、スタンプを送信してください。",
+            "必要事項をお送りします。ライバー名などは仮決めで大丈夫です。"
+          ],
+          points: ["作業中の雑談テーマを担当者ごとに準備しておく", "個人情報は必要な範囲だけ確認する"],
+          next: ["prestream"]
+        },
+        prestream: {
+          stage: "06 PRE-STREAM",
+          title: "初配信前の準備と次回面談",
+          summary: "面談後の準備項目と、初配信前の次回面談日を確定します。",
+          scripts: [
+            "次にご対応いただきたい内容をご案内します。",
+            "また、配信前にもう一度面談できればと思うので、その日時を設定しましょう。"
+          ],
+          points: [
+            "アイコンフレーム設定",
+            "プロフィール文設定",
+            "配信用Xの作成または連携",
+            "枠周り",
+            "事務所資料の確認",
+            "講習会の日程設定",
+            "初週・初配信前のスケジュール設定",
+            "配信前面談の日時設定"
+          ],
+          copyItems: [
+            {
+              title: "① 事務所アイコンフレーム",
+              text: `【事務所アイコンフレーム】
+アイコンの枠をつけることでLiveNovaのライバーさんや
+リスナーさんが来てくださることも増えると思いますのでよかったら是非つけてみてください
+※ibisのグラデーションフィルターで色変えられます
+
+https://drive.google.com/file/d/1jN5q7mG8N4eT0sec3JvN9yfGslw0294h/view?usp=sharing`
+            },
+            {
+              title: "② プロフィール文サンプル",
+              text: `〇/〇 〇〇:〇〇～初配信予定
+
+🟧LiveNova所属⬛
+
+━━━━━━━━━━━━━━━━━━━━
+
+【趣味】
+
+あ、コーヒー:coffee:️めちゃ好きです。
+
+豆引いてハンドリしてます。
+
+でゅろんぎ欲しいです。
+
+
+
+６月から外国人と
+
+シェアハウスしてます。
+
+震えてます。
+
+
+
+あとHip Hopと邦ロック聴きま。
+
+
+
+ポケモンをこよなく愛してます。
+
+転生するならマサラタウンから
+
+ヒトカゲスタートで。
+
+
+
+さけすき:beers:
+
+━━━━━━━━━━━━━━━
+
+【配信】
+
+ラジオがメインの予定です
+
+
+
+おすすめの居酒屋とかを
+
+みんなから聞いたり紹介したり
+
+
+
+あとその日あったことを
+
+話せれたら！
+
+━━━━━━━━━━━━━━━
+
+【所属】
+
+LiveNova
+
+━━━━━━━━━━━━━━━
+
+【目標】
+
+～〇/〇 までにB1達成
+
+～〇/〇 までにC2達成
+
+━━━━━━━━━━━━━━━
+
+【その他】
+
+バッチ:name_badge:特典
+
+━━━━━━━━━━━━━━━
+
+【最後に...】
+
+アニョハセヨパルム〜
+
+━━━━━━━━━━━━━━━`
+            },
+            {
+              title: "③ 枠周り",
+              text: `枠周りをしてください
+目標：フォロワー30人
+► 仲のいいライバーを2～3人作ろう`
+            },
+            { title: "配信用Xの作成または連携", text: "配信用Xの作成または連携" },
+            { title: "事務所資料の確認", text: "事務所資料の確認" },
+            { title: "講習会の日程設定", text: "講習会の日程設定" },
+            { title: "初週・初配信前のスケジュール設定", text: "初週・初配信前のスケジュール設定" },
+            { title: "配信前面談の日時設定", text: "配信前面談の日時設定" }
+          ],
+          warnings: ["登録完了の連絡が来るまでは配信を行わないよう案内する", "他配信の閲覧・枠周りは可能と案内する"],
+          next: ["end"]
+        },
+        end: {
+          stage: "END",
+          title: "面談終了",
+          summary: "次の連絡内容と禁止事項を確認して終了します。",
+          scripts: ["本日はありがとうございました。登録完了しましたら再度ご連絡します。よろしくお願いします。"],
+          points: ["次回連絡の担当・方法・期限を明確にする"],
+          next: []
+        }
+      },
+      layout: [
+        { type: "sequence", stage: "01", label: "挨拶・ヒアリング", nodes: ["opening", "hearing"] },
+        { type: "decision", stage: "02", label: "Palmu説明の分岐", decision: "palmuRoute", branches: [
+          { label: "経験あり・現在も配信", nodes: ["knownActive"] },
+          { label: "経験あり・現在は休止", nodes: ["knownInactive"] },
+          { label: "Palmuを知らない", nodes: ["palmuNew"] }
+        ], merge: "palmuFit" },
+        { type: "sequence", stage: "03", label: "LiveNovaの所属メリット", nodes: ["liveNova"] },
+        { type: "decision", stage: "03", label: "ボーナス説明の分岐", decision: "bonusCheck", branches: [
+          { label: "Palmu未経験", nodes: ["bonus"] },
+          { label: "Palmu経験あり", nodes: ["bonusSkip"] }
+        ], merge: "closing" },
+        { type: "decision", stage: "04", label: "クロージング", decision: "closing", branches: [
+          { label: "返答に困る", nodes: ["uncertain"] },
+          { label: "もう少し考えたい", nodes: ["consider"] },
+          { label: "始めてみたい", nodes: ["ready"] }
+        ] },
+        { type: "decision", stage: "05", label: "所属手続きへの接続", decision: "timeCheck", branches: [
+          { label: "時間がある", nodes: ["procedureNow"] },
+          { label: "時間がない", nodes: ["procedureLater"] }
+        ], merge: "procedure" },
+        { type: "sequence", stage: "06", label: "初配信前の設定", nodes: ["prestream", "end"] }
+      ]
+    };
+
+    const toneById = {
+      opening: "blue", hearing: "green", palmuRoute: "purple", knownActive: "purple",
+      knownInactive: "purple", palmuNew: "purple", palmuFit: "green", liveNova: "blue",
+      bonusCheck: "amber", bonus: "amber", bonusSkip: "green", closing: "teal",
+      uncertain: "amber", consider: "amber", ready: "teal", timeCheck: "purple",
+      procedureNow: "teal", procedureLater: "amber", procedure: "blue",
+      prestream: "blue", end: "green"
+    };
+
+    const escapeHtml = function (value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    };
+
+    function loadSession() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        sessionState.candidateName = typeof saved.candidateName === "string" ? saved.candidateName : "";
+        sessionState.staffName = typeof saved.staffName === "string" ? saved.staffName : "";
+        sessionState.notes = saved.notes && typeof saved.notes === "object" ? saved.notes : {};
+      } catch (error) {
+        sessionState.candidateName = "";
+        sessionState.staffName = "";
+        sessionState.notes = {};
+      }
+    }
+
+    function saveSession() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionState));
+      } catch (error) {
+        // 保存できない環境でも、開いている間は入力内容を維持します。
+      }
+    }
+
+    function personalize(value) {
+      const candidate = sessionState.candidateName.trim() || "［お名前］";
+      const staff = sessionState.staffName.trim() || "［担当者名］";
+      return String(value)
+        .replaceAll("［お名前］", candidate)
+        .replaceAll("[お名前]", candidate)
+        .replaceAll("［担当者名］", staff)
+        .replaceAll("[担当者名]", staff);
+    }
+
+    function updateMemoIndicators() {
+      let count = 0;
+      Object.keys(DATA.nodes).forEach(function (id) {
+        if (String(sessionState.notes[id] || "").trim()) count += 1;
+      });
+      document.getElementById("memoCount").textContent = "メモ " + count + "件";
+
+      document.querySelectorAll(".chart-node[data-node]").forEach(function (button) {
+        const hasMemo = Boolean(String(sessionState.notes[button.dataset.node] || "").trim());
+        button.classList.toggle("has-memo", hasMemo);
+        let badge = button.querySelector(".memo-badge");
+        if (hasMemo && !badge) {
+          badge = document.createElement("span");
+          badge.className = "memo-badge";
+          badge.textContent = "メモあり";
+          button.appendChild(badge);
+        } else if (!hasMemo && badge) {
+          badge.remove();
+        }
+      });
+    }
+
+    function chartButton(id, extraClass) {
+      const node = DATA.nodes[id];
+      const tone = toneById[id] || "blue";
+      return '<button type="button" class="chart-node tone-' + tone + ' ' + (extraClass || "") +
+        '" data-node="' + escapeHtml(id) + '" aria-pressed="false"><small>' +
+        escapeHtml(node.stage) + '</small><strong>' + escapeHtml(node.title) + '</strong></button>';
+    }
+
+    function layoutNodeIds(item) {
+      if (item.type === "sequence") return item.nodes.slice();
+      const ids = [item.decision];
+      item.branches.forEach(function (branch) { ids.push.apply(ids, branch.nodes); });
+      if (item.merge) ids.push(item.merge);
+      return ids;
+    }
+
+    function renderStage(item, index) {
+      let content = "";
+      if (item.type === "sequence") {
+        content = '<div class="flow-row">' + item.nodes.map(function (id, nodeIndex) {
+          return chartButton(id) + (nodeIndex < item.nodes.length - 1 ? '<span class="row-arrow" aria-hidden="true">→</span>' : "");
+        }).join("") + '</div>';
+      } else {
+        content = chartButton(item.decision, "decision-main") +
+          '<div class="branches" style="--cols:' + item.branches.length + '">' +
+          item.branches.map(function (branch) {
+            return '<div class="branch"><span class="branch-label">' + escapeHtml(branch.label) + '</span>' +
+              branch.nodes.map(function (id) { return chartButton(id); }).join("") + '</div>';
+          }).join("") + '</div>';
+        if (item.merge) {
+          content += '<div class="merge-cue">合流</div><div class="flow-row">' + chartButton(item.merge) + '</div>';
+        }
+      }
+
+      return '<details class="flow-stage" data-stage-nodes="' + escapeHtml(layoutNodeIds(item).join(" ")) + '" open>' +
+        '<summary class="flow-stage-label"><span class="stage-number">' + escapeHtml(item.stage) + '</span>' +
+        escapeHtml(item.label) + '<span class="stage-chevron" aria-hidden="true">›</span></summary>' +
+        '<div class="flow-stage-content">' + content + '</div></details>' +
+        (index < DATA.layout.length - 1 ? '<div class="stage-arrow" aria-hidden="true">↓</div>' : "");
+    }
+
+    function renderFlow() {
+      document.getElementById("flowMap").innerHTML = DATA.layout.map(renderStage).join("");
+    }
+
+    function openStageForNode(id) {
+      document.querySelectorAll(".flow-stage").forEach(function (stage) {
+        const containsNode = stage.dataset.stageNodes.split(" ").includes(id);
+        stage.open = mobileMedia.matches ? containsNode : true;
+      });
+    }
+
+    function setMobileView(view, shouldNavigate) {
+      document.body.dataset.mobileView = view;
+      document.querySelectorAll("[data-mobile-view-target]").forEach(function (button) {
+        if (button.dataset.mobileViewTarget === view) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+      });
+      if (!shouldNavigate || !mobileMedia.matches) return;
+      requestAnimationFrame(function () {
+        const prefersLessMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        let target = view === "detail" ? document.getElementById("detailPanel") :
+          document.querySelector('.chart-node[aria-pressed="true"]');
+        if (target && view === "flow") target = target.closest(".flow-stage") || target;
+        if (target) target.scrollIntoView({ behavior: prefersLessMotion ? "auto" : "smooth", block: "start" });
+      });
+    }
+
+    function listMarkup(items, className) {
+      if (!items || !items.length) return "";
+      return '<ul class="' + className + '">' + items.map(function (item) {
+        return '<li>' + escapeHtml(personalize(item)) + '</li>';
+      }).join("") + '</ul>';
+    }
+
+    function copyItemsMarkup(items) {
+      return '<div class="copy-card-list">' + items.map(function (item, index) {
+        const preview = item.text.replace(/\s+/g, " ").trim().slice(0, 72);
+        return '<button type="button" class="copy-card" data-copy-index="' + index + '">' +
+          '<strong>' + escapeHtml(item.title) + '</strong>' +
+          '<span class="copy-card-preview">' + escapeHtml(preview) + (item.text.length > 72 ? "…" : "") + '</span>' +
+          '<span class="copy-card-action">コピー</span></button>';
+      }).join("") + '</div><p id="copyCardFeedback" class="copy-feedback" aria-live="polite"></p>';
+    }
+
+    function selectNode(id, shouldNavigate) {
+      const node = DATA.nodes[id];
+      if (!node) return;
+      activeNodeId = id;
+
+      document.querySelectorAll("[data-node]").forEach(function (button) {
+        button.setAttribute("aria-pressed", String(button.dataset.node === id));
+      });
+
+      openStageForNode(id);
+
+      let body = '<div class="detail-head"><button type="button" class="mobile-back" data-mobile-back>‹ フローへ戻る</button><p>' + escapeHtml(node.stage) + '</p><h2>' +
+        escapeHtml(node.title) + '</h2><p class="summary">' + escapeHtml(node.summary) + '</p></div><div class="detail-body">';
+
+      if (node.scripts && node.scripts.length) {
+        body += '<section class="detail-block"><h3>話す内容</h3>' + listMarkup(node.scripts, "script-list") + '</section>';
+      }
+      if (node.points && node.points.length) {
+        body += '<section class="detail-block"><h3>担当者メモ</h3>' + listMarkup(node.points, "point-list") + '</section>';
+      }
+      if (node.copyItems && node.copyItems.length) {
+        body += '<section class="detail-block"><h3>タップしてコピー</h3>' + copyItemsMarkup(node.copyItems) + '</section>';
+      }
+      if (node.warnings && node.warnings.length) {
+        body += '<section class="detail-block warning-box"><h3>最新版・表現の確認</h3>' + listMarkup(node.warnings, "warning-list") + '</section>';
+      }
+      body += '<section class="detail-block memo-editor"><h3>この箇所のメモ</h3>' +
+        '<textarea id="nodeMemo" data-note-id="' + escapeHtml(id) + '" placeholder="相手の反応・確認事項・次回対応などを入力">' +
+        escapeHtml(sessionState.notes[id] || "") + '</textarea><p class="save-hint">入力内容はこのブラウザに自動保存されます。</p></section>';
+      if (node.next && node.next.length) {
+        body += '<section class="detail-block"><h3>次の候補</h3><div class="next-links">' +
+          node.next.map(function (nextId) {
+            return '<button type="button" class="next-button" data-node="' + escapeHtml(nextId) + '">' +
+              escapeHtml(DATA.nodes[nextId].title) + ' →</button>';
+          }).join("") + '</div></section>';
+      }
+      body += '</div>';
+
+      const panel = document.getElementById("detailPanel");
+      panel.innerHTML = body;
+      if (history.replaceState && (shouldNavigate || location.hash)) history.replaceState(null, "", "#" + id);
+      if (shouldNavigate && mobileMedia.matches) setMobileView("detail", true);
+    }
+
+    function buildExportText() {
+      const timestamp = new Intl.DateTimeFormat("ja-JP", {
+        dateStyle: "long",
+        timeStyle: "short"
+      }).format(new Date());
+      const lines = [
+        "# LiveNova 面談メモ",
+        "",
+        "- 名前: " + (sessionState.candidateName.trim() || "未入力"),
+        "- 担当者: " + (sessionState.staffName.trim() || "未入力"),
+        "- 出力日時: " + timestamp,
+        "",
+        "## 各箇所のメモ",
+        ""
+      ];
+      const notedEntries = Object.entries(DATA.nodes).filter(function (entry) {
+        return Boolean(String(sessionState.notes[entry[0]] || "").trim());
+      });
+      if (!notedEntries.length) {
+        lines.push("メモはありません。", "");
+      } else {
+        notedEntries.forEach(function (entry) {
+          const id = entry[0];
+          const node = entry[1];
+          lines.push("### " + node.stage + "｜" + node.title, "", String(sessionState.notes[id]).trim(), "");
+        });
+      }
+      return lines.join("\n");
+    }
+
+    function openExportDialog() {
+      const dialog = document.getElementById("exportDialog");
+      document.getElementById("exportTextarea").value = buildExportText();
+      document.getElementById("copyStatus").textContent = "";
+      if (typeof dialog.showModal === "function") dialog.showModal();
+      else dialog.setAttribute("open", "");
+    }
+
+    async function writeClipboardText(value) {
+      try {
+        await navigator.clipboard.writeText(value);
+        return true;
+      } catch (error) {
+        const helper = document.createElement("textarea");
+        helper.value = value;
+        helper.setAttribute("readonly", "");
+        helper.style.position = "fixed";
+        helper.style.opacity = "0";
+        document.body.appendChild(helper);
+        helper.select();
+        const copied = document.execCommand("copy");
+        helper.remove();
+        return copied;
+      }
+    }
+
+    async function copyCardText(button) {
+      const node = DATA.nodes[activeNodeId];
+      const item = node && node.copyItems ? node.copyItems[Number(button.dataset.copyIndex)] : null;
+      if (!item) return;
+      const copied = await writeClipboardText(personalize(item.text));
+      const feedback = document.getElementById("copyCardFeedback");
+      document.querySelectorAll(".copy-card").forEach(function (card) {
+        card.classList.remove("copied");
+        const action = card.querySelector(".copy-card-action");
+        if (action) action.textContent = "コピー";
+      });
+      if (copied) {
+        button.classList.add("copied");
+        button.querySelector(".copy-card-action").textContent = "コピー済み";
+        if (feedback) feedback.textContent = "「" + item.title + "」をコピーしました。";
+      } else if (feedback) {
+        feedback.textContent = "コピーできませんでした。ブラウザのクリップボード設定をご確認ください。";
+      }
+    }
+
+    async function copyExportText() {
+      const textarea = document.getElementById("exportTextarea");
+      const status = document.getElementById("copyStatus");
+      const copied = await writeClipboardText(textarea.value);
+      status.textContent = copied ? "コピーしました" : "選択した内容をコピーしてください";
+    }
+
+    function downloadExportText() {
+      const text = document.getElementById("exportTextarea").value;
+      const safeName = (sessionState.candidateName.trim() || "未入力")
+        .replace(/[\\/:*?"<>|]/g, "_")
+        .slice(0, 40);
+      const date = new Date();
+      const datePart = [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+      const url = URL.createObjectURL(new Blob([text], { type: "text/markdown;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "面談メモ_" + safeName + "_" + datePart + ".md";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+
+    document.addEventListener("click", function (event) {
+      const mobileBack = event.target.closest("[data-mobile-back]");
+      if (mobileBack) {
+        setMobileView("flow", true);
+        return;
+      }
+      const mobileViewButton = event.target.closest("[data-mobile-view-target]");
+      if (mobileViewButton) {
+        setMobileView(mobileViewButton.dataset.mobileViewTarget, true);
+        return;
+      }
+      const copyButton = event.target.closest("[data-copy-index]");
+      if (copyButton) {
+        copyCardText(copyButton);
+        return;
+      }
+      const button = event.target.closest("[data-node]");
+      if (!button) return;
+      selectNode(button.dataset.node, true);
+    });
+
+    document.addEventListener("input", function (event) {
+      if (event.target.id === "nodeMemo") {
+        sessionState.notes[event.target.dataset.noteId] = event.target.value;
+        saveSession();
+        updateMemoIndicators();
+      }
+    });
+
+    document.getElementById("candidateName").addEventListener("input", function (event) {
+      sessionState.candidateName = event.target.value;
+      saveSession();
+      selectNode(activeNodeId, false);
+    });
+
+    document.getElementById("staffName").addEventListener("input", function (event) {
+      sessionState.staffName = event.target.value;
+      saveSession();
+      selectNode(activeNodeId, false);
+    });
+
+    document.getElementById("exportNotesButton").addEventListener("click", openExportDialog);
+    document.getElementById("copyExportButton").addEventListener("click", copyExportText);
+    document.getElementById("downloadExportButton").addEventListener("click", downloadExportText);
+    document.getElementById("closeExportButton").addEventListener("click", function () {
+      document.getElementById("exportDialog").close();
+    });
+    document.getElementById("exportDialog").addEventListener("click", function (event) {
+      if (event.target === event.currentTarget) event.currentTarget.close();
+    });
+
+    mobileMedia.addEventListener("change", function () {
+      openStageForNode(activeNodeId);
+      if (!mobileMedia.matches) document.body.dataset.mobileView = "flow";
+    });
+
+    loadSession();
+    document.getElementById("candidateName").value = sessionState.candidateName;
+    document.getElementById("staffName").value = sessionState.staffName;
+    const initialId = location.hash.slice(1);
+    const hasInitialNode = Boolean(DATA.nodes[initialId]);
+    renderFlow();
+    updateMemoIndicators();
+    selectNode(hasInitialNode ? initialId : "opening", false);
+    setMobileView(hasInitialNode ? "detail" : "flow", false);
+  </script>
+</body>
+</html>
