@@ -236,6 +236,37 @@
     .copy-card-action { position: absolute; top: 50%; right: 12px; padding: 4px 8px; border-radius: 99px; color: #fff; background: var(--blue); font-size: .68rem; font-weight: 850; transform: translateY(-50%); }
     .copy-card.copied { border-color: var(--green); background: var(--green-soft); }
     .copy-card.copied .copy-card-action { background: var(--green); }
+    .copy-preview-popover {
+      position: fixed;
+      z-index: 120;
+      width: min(380px, calc(100vw - 24px));
+      max-height: min(420px, calc(100dvh - 24px));
+      overflow: auto;
+      padding: 13px 14px 14px;
+      border: 1px solid rgb(174 198 215 / 82%);
+      border-radius: 15px;
+      color: #24415f;
+      background: rgb(255 255 255 / 94%);
+      box-shadow: 0 18px 48px rgb(13 51 93 / 20%), 0 3px 10px rgb(13 51 93 / 9%);
+      backdrop-filter: blur(18px) saturate(150%);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translateY(6px) scale(.985);
+      transform-origin: var(--preview-origin-x, 50%) var(--preview-origin-y, 100%);
+      transition: opacity .14s ease-out, transform .18s cubic-bezier(.2, .8, .2, 1), visibility 0s linear .18s;
+    }
+    .copy-preview-popover.is-visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+      transition-delay: 0s;
+    }
+    .copy-preview-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 9px; border-bottom: 1px solid #e2eaf0; }
+    .copy-preview-head strong { min-width: 0; font-size: .86rem; line-height: 1.45; overflow-wrap: anywhere; }
+    .copy-preview-head span { flex: 0 0 auto; color: var(--blue); font-size: .67rem; font-weight: 850; }
+    .copy-preview-text { margin: 10px 0 0; color: #40576e; font: inherit; font-size: .8rem; line-height: 1.68; white-space: pre-wrap; overflow-wrap: anywhere; }
     .copy-feedback { min-height: 1.4em; margin: 8px 0 0; color: var(--green); font-size: .76rem; font-weight: 800; }
     .copy-data-panel { margin-top: 12px; padding: 13px 14px; border: 1px solid #d8e2ea; border-radius: 12px; background: #f8fafc; }
     .copy-data-panel > strong { display: block; color: #334e68; font-size: .82rem; }
@@ -391,6 +422,7 @@
       .copy-card strong { font-size: .85rem; }
       .copy-card-preview { font-size: .71rem; }
       .copy-card-action { right: 10px; }
+      .copy-preview-popover { display: none; }
       .copy-data-tools { display: grid; grid-template-columns: minmax(0, 1fr); }
       .copy-data-button { width: 100%; min-height: 44px; }
       .memo-editor textarea { min-height: 120px; font-size: .88rem; }
@@ -429,7 +461,10 @@
       *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
     }
     @media (prefers-reduced-transparency: reduce) {
-      .topbar, .mobile-tabbar { background: #fff; backdrop-filter: none; }
+      .topbar, .mobile-tabbar, .copy-preview-popover { background: #fff; backdrop-filter: none; }
+    }
+    @media (hover: none), (pointer: coarse) {
+      .copy-preview-popover { display: none; }
     }
     @media (prefers-contrast: more) {
       .flow-shell, .detail-panel, .session-bar, .flow-stage { border: 1px solid #7d8d9d; }
@@ -490,6 +525,14 @@
     </aside>
   </main>
 
+  <div id="copyPreviewPopover" class="copy-preview-popover" role="tooltip" aria-hidden="true">
+    <div class="copy-preview-head">
+      <strong id="copyPreviewTitle"></strong>
+      <span>クリックでコピー</span>
+    </div>
+    <pre id="copyPreviewText" class="copy-preview-text"></pre>
+  </div>
+
   <nav class="mobile-tabbar" aria-label="画面切り替え">
     <button type="button" data-mobile-view-target="flow" aria-current="page">フロー</button>
     <button type="button" data-mobile-view-target="detail">詳細</button>
@@ -515,7 +558,11 @@
     const STORAGE_KEY = "livenova-closing-session-v1";
     const sessionState = { candidateName: "", staffName: "", notes: {}, copyItemsOverride: null };
     const mobileMedia = window.matchMedia("(max-width: 760px)");
+    const hoverPreviewMedia = window.matchMedia("(hover: hover) and (pointer: fine)");
     let activeNodeId = "opening";
+    let copyPreviewAnchor = null;
+    let copyPreviewFrame = 0;
+    let copyPreviewHideTimer = 0;
 
     const DATA = {
       nodes: {
@@ -1204,6 +1251,7 @@ LiveNova
     function selectNode(id, shouldNavigate) {
       const node = DATA.nodes[id];
       if (!node) return;
+      hideCopyPreview();
       activeNodeId = id;
 
       document.querySelectorAll("[data-node]").forEach(function (button) {
@@ -1321,6 +1369,97 @@ LiveNova
       }
     }
 
+    function copyItemForButton(button) {
+      const node = DATA.nodes[activeNodeId];
+      return node && node.copyItems ? node.copyItems[Number(button.dataset.copyIndex)] : null;
+    }
+
+    function positionCopyPreview() {
+      copyPreviewFrame = 0;
+      const popover = document.getElementById("copyPreviewPopover");
+      const button = copyPreviewAnchor;
+      if (!popover || !button || !button.isConnected || !hoverPreviewMedia.matches) {
+        hideCopyPreview();
+        return;
+      }
+
+      const gap = 10;
+      const edge = 12;
+      const anchorRect = button.getBoundingClientRect();
+      const previewRect = popover.getBoundingClientRect();
+      const fitsRight = window.innerWidth - anchorRect.right - gap - edge >= previewRect.width;
+      const fitsLeft = anchorRect.left - gap - edge >= previewRect.width;
+      let left;
+      let top;
+      let originX = "50%";
+      let originY = "100%";
+
+      if (fitsRight || fitsLeft) {
+        const placeRight = fitsRight && (!fitsLeft || window.innerWidth - anchorRect.right >= anchorRect.left);
+        left = placeRight ? anchorRect.right + gap : anchorRect.left - previewRect.width - gap;
+        top = Math.min(Math.max(anchorRect.top, edge), window.innerHeight - previewRect.height - edge);
+        originX = placeRight ? "0%" : "100%";
+        originY = Math.round(Math.min(Math.max(anchorRect.top + anchorRect.height / 2 - top, 16), previewRect.height - 16)) + "px";
+      } else {
+        const roomBelow = window.innerHeight - anchorRect.bottom - gap - edge;
+        const roomAbove = anchorRect.top - gap - edge;
+        const placeBelow = roomBelow >= previewRect.height || roomBelow >= roomAbove;
+        left = anchorRect.left + anchorRect.width / 2 - previewRect.width / 2;
+        left = Math.min(Math.max(left, edge), window.innerWidth - previewRect.width - edge);
+        top = placeBelow ? anchorRect.bottom + gap : anchorRect.top - previewRect.height - gap;
+        top = Math.min(Math.max(top, edge), window.innerHeight - previewRect.height - edge);
+        originX = Math.round(Math.min(Math.max(anchorRect.left + anchorRect.width / 2 - left, 16), previewRect.width - 16)) + "px";
+        originY = placeBelow ? "0%" : "100%";
+      }
+
+      popover.style.left = Math.round(left) + "px";
+      popover.style.top = Math.round(top) + "px";
+      popover.style.setProperty("--preview-origin-x", originX);
+      popover.style.setProperty("--preview-origin-y", originY);
+    }
+
+    function showCopyPreview(button) {
+      if (!hoverPreviewMedia.matches) return;
+      const item = copyItemForButton(button);
+      const popover = document.getElementById("copyPreviewPopover");
+      if (!item || !popover) return;
+      if (copyPreviewHideTimer) clearTimeout(copyPreviewHideTimer);
+      copyPreviewHideTimer = 0;
+      if (copyPreviewAnchor && copyPreviewAnchor !== button) copyPreviewAnchor.removeAttribute("aria-describedby");
+      copyPreviewAnchor = button;
+      document.getElementById("copyPreviewTitle").textContent = item.title;
+      document.getElementById("copyPreviewText").textContent = personalize(item.text);
+      button.setAttribute("aria-describedby", "copyPreviewPopover");
+      popover.setAttribute("aria-hidden", "false");
+      positionCopyPreview();
+      popover.classList.add("is-visible");
+    }
+
+    function hideCopyPreview(button) {
+      if (button && copyPreviewAnchor !== button) return;
+      const popover = document.getElementById("copyPreviewPopover");
+      if (copyPreviewHideTimer) clearTimeout(copyPreviewHideTimer);
+      copyPreviewHideTimer = 0;
+      if (copyPreviewAnchor) copyPreviewAnchor.removeAttribute("aria-describedby");
+      copyPreviewAnchor = null;
+      if (copyPreviewFrame) cancelAnimationFrame(copyPreviewFrame);
+      copyPreviewFrame = 0;
+      if (popover) {
+        popover.classList.remove("is-visible");
+        popover.setAttribute("aria-hidden", "true");
+      }
+    }
+
+    function queueCopyPreviewHide(button) {
+      if (copyPreviewHideTimer) clearTimeout(copyPreviewHideTimer);
+      copyPreviewHideTimer = setTimeout(function () { hideCopyPreview(button); }, 120);
+    }
+
+    function scheduleCopyPreviewPosition() {
+      if (!copyPreviewAnchor || copyPreviewFrame) return;
+      copyPreviewFrame = requestAnimationFrame(positionCopyPreview);
+    }
+
     async function copyExportText() {
       const textarea = document.getElementById("exportTextarea");
       const status = document.getElementById("copyStatus");
@@ -1389,6 +1528,46 @@ LiveNova
       if (event.target.id === "copyCsvInput") importCopyItemsCsv(event.target);
     });
 
+    document.addEventListener("pointerover", function (event) {
+      const button = event.target.closest(".copy-card");
+      if (!button || (event.relatedTarget && button.contains(event.relatedTarget))) return;
+      showCopyPreview(button);
+    });
+
+    document.addEventListener("pointerout", function (event) {
+      const button = event.target.closest(".copy-card");
+      if (!button || (event.relatedTarget && button.contains(event.relatedTarget))) return;
+      queueCopyPreviewHide(button);
+    });
+
+    document.addEventListener("focusin", function (event) {
+      const button = event.target.closest(".copy-card");
+      if (button) showCopyPreview(button);
+    });
+
+    document.addEventListener("focusout", function (event) {
+      const button = event.target.closest(".copy-card");
+      if (button) hideCopyPreview(button);
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") hideCopyPreview();
+    });
+
+    document.getElementById("copyPreviewPopover").addEventListener("pointerenter", function () {
+      if (copyPreviewHideTimer) clearTimeout(copyPreviewHideTimer);
+      copyPreviewHideTimer = 0;
+    });
+    document.getElementById("copyPreviewPopover").addEventListener("pointerleave", function () {
+      queueCopyPreviewHide(copyPreviewAnchor);
+    });
+    document.getElementById("copyPreviewPopover").addEventListener("click", function () {
+      if (copyPreviewAnchor) copyCardText(copyPreviewAnchor);
+    });
+
+    document.addEventListener("scroll", scheduleCopyPreviewPosition, true);
+    window.addEventListener("resize", scheduleCopyPreviewPosition);
+
     document.getElementById("candidateName").addEventListener("input", function (event) {
       sessionState.candidateName = event.target.value;
       saveSession();
@@ -1415,6 +1594,7 @@ LiveNova
       openStageForNode(activeNodeId);
       if (!mobileMedia.matches) document.body.dataset.mobileView = "flow";
     });
+    hoverPreviewMedia.addEventListener("change", function () { hideCopyPreview(); });
 
     loadSession();
     if (sessionState.copyItemsOverride) applyCopyItems(sessionState.copyItemsOverride);
