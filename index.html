@@ -2,8 +2,9 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="LiveNovaのクロージングスクリプトを分岐ごとに確認できるフローチャート">
+  <meta name="theme-color" content="#040b1d">
   <link rel="icon" href="data:,">
   <title>LiveNova クロージング・フローナビ</title>
   <style>
@@ -456,26 +457,404 @@
       .dialog-button.secondary { grid-column: 1 / -1; }
       .copy-status { grid-column: 1 / -1; margin: 0; text-align: center; }
     }
+
+    /* Cosmic interface theme — deep-space blue with action-oriented orange. */
+    :root {
+      color-scheme: dark;
+      --ink: #f4f7ff;
+      --muted: #9cacc9;
+      --line: rgb(131 174 255 / 18%);
+      --paper: rgb(7 20 46 / 82%);
+      --canvas: #020716;
+      --navy: #0a1f45;
+      --blue: #4f91ff;
+      --blue-soft: rgb(69 132 246 / 12%);
+      --green: #46d6a4;
+      --green-soft: rgb(70 214 164 / 12%);
+      --purple: #9d8cff;
+      --purple-soft: rgb(157 140 255 / 12%);
+      --amber: #ff9a42;
+      --amber-soft: rgb(255 143 47 / 13%);
+      --red: #ff7183;
+      --red-soft: rgb(255 91 112 / 11%);
+      --teal: #4cdce7;
+      --teal-soft: rgb(76 220 231 / 11%);
+      --orange: #ff8a2a;
+      --orange-bright: #ffac64;
+      --orange-soft: rgb(255 138 42 / 13%);
+      --space-panel: rgb(7 20 46 / 82%);
+      --space-panel-strong: rgb(8 24 53 / 96%);
+      --space-raised: rgb(13 34 70 / 78%);
+      --shadow: 0 24px 70px rgb(0 4 16 / 42%), inset 0 1px 0 rgb(255 255 255 / 4%);
+      --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Yu Gothic UI", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+    }
+
+    html { background: var(--canvas); }
+    body {
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 16% 2%, rgb(42 101 214 / 24%), transparent 31rem),
+        radial-gradient(circle at 88% 28%, rgb(24 73 168 / 19%), transparent 28rem),
+        radial-gradient(circle at 52% 88%, rgb(255 138 42 / 6%), transparent 25rem),
+        radial-gradient(circle, rgb(157 191 255 / 32%) 0 1px, transparent 1.5px) 0 0 / 61px 61px,
+        radial-gradient(circle, rgb(100 150 255 / 20%) 0 1px, transparent 1.4px) 23px 19px / 97px 97px,
+        linear-gradient(155deg, #020716 0%, #05122a 46%, #030a1c 100%);
+      background-attachment: fixed;
+      letter-spacing: .005em;
+    }
+    ::selection { color: #07142e; background: var(--orange-bright); }
+    button, a, input, textarea { -webkit-tap-highlight-color: transparent; }
+    button { color: inherit; }
+    :where(button, a, input, textarea):focus-visible {
+      outline: 3px solid rgb(255 138 42 / 34%);
+      outline-offset: 2px;
+    }
+
+    .topbar {
+      border-bottom-color: rgb(115 161 255 / 15%);
+      background: rgb(3 10 26 / 76%);
+      box-shadow: 0 10px 36px rgb(0 4 16 / 22%);
+      backdrop-filter: blur(24px) saturate(150%);
+    }
+    .brand-mark {
+      position: relative;
+      overflow: visible;
+      border: 1px solid rgb(126 177 255 / 35%);
+      color: #fff;
+      background: linear-gradient(145deg, #173f82 0%, #0a1d43 64%, #21152e 100%);
+      box-shadow: 0 0 0 4px rgb(64 132 255 / 7%), 0 8px 24px rgb(32 101 225 / 24%);
+    }
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      right: -3px;
+      top: -3px;
+      border: 2px solid #07142e;
+      border-radius: 50%;
+      background: var(--orange);
+      box-shadow: 0 0 14px rgb(255 138 42 / 85%);
+    }
+    .brand p { color: var(--orange-bright); }
+    .brand h1 { color: #f7f9ff; }
+    .source-link {
+      border-color: rgb(126 177 255 / 23%);
+      color: #c7d8f5;
+      background: rgb(20 45 87 / 50%);
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
+      transition: transform .16s ease-out, border-color .16s ease-out, color .16s ease-out, background .16s ease-out;
+    }
+    .source-link:hover { border-color: rgb(255 153 64 / 55%); color: #fff; background: var(--orange-soft); transform: translateY(-1px); }
+    .source-link:active { transform: scale(.97); }
+
+    .notice {
+      border-bottom-color: rgb(255 138 42 / 23%);
+      color: #ffd5af;
+      background: linear-gradient(90deg, rgb(255 138 42 / 12%), rgb(7 20 46 / 76%) 38%, rgb(7 20 46 / 62%));
+      box-shadow: inset 3px 0 0 var(--orange);
+    }
+    .notice strong { color: var(--orange-bright); }
+
+    .session-bar {
+      border-bottom-color: var(--line);
+      background: rgb(5 16 38 / 72%);
+      box-shadow: inset 0 -1px 0 rgb(255 255 255 / 2%);
+      backdrop-filter: blur(18px) saturate(140%);
+    }
+    .session-field span { color: #9db1d2; }
+    .session-field input {
+      border-color: rgb(119 163 241 / 38%);
+      color: #f6f8ff;
+      background: rgb(13 34 70 / 66%);
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / 3%);
+      transition: border-color .15s ease-out, box-shadow .15s ease-out, background .15s ease-out;
+    }
+    .session-field input::placeholder, .memo-editor textarea::placeholder { color: #7083a5; }
+    .session-field input:focus, .memo-editor textarea:focus, .export-textarea:focus {
+      border-color: var(--orange);
+      outline: 3px solid rgb(255 138 42 / 17%);
+      background: rgb(15 39 79 / 88%);
+      box-shadow: 0 0 0 1px rgb(255 138 42 / 10%), 0 8px 24px rgb(0 5 20 / 22%);
+    }
+    .memo-count { color: #91a4c4; }
+    .export-button, .dialog-button {
+      border-color: #ff9b4a;
+      color: #101728;
+      background: linear-gradient(135deg, var(--orange-bright), var(--orange));
+      box-shadow: 0 8px 24px rgb(255 122 24 / 22%), inset 0 1px 0 rgb(255 255 255 / 28%);
+      transition: transform .12s ease-out, filter .16s ease-out, box-shadow .16s ease-out;
+    }
+    .export-button:hover, .dialog-button:hover { background: linear-gradient(135deg, #ffc087, #ff9138); filter: brightness(1.03); box-shadow: 0 10px 28px rgb(255 122 24 / 30%); }
+    .export-button:active, .dialog-button:active { transform: scale(.97); }
+    .dialog-button.secondary { color: #c8d7ef; background: rgb(21 44 82 / 72%); border-color: rgb(130 170 238 / 28%); box-shadow: none; }
+    .dialog-button.secondary:hover { color: #fff; background: rgb(30 59 105 / 86%); }
+
+    .flow-shell, .detail-panel {
+      border-color: var(--line);
+      background: linear-gradient(155deg, rgb(10 27 59 / 88%), rgb(5 16 38 / 84%));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(26px) saturate(135%);
+    }
+    .flow-shell { position: relative; }
+    .flow-shell::before, .detail-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background: linear-gradient(115deg, rgb(130 177 255 / 10%), transparent 24%, transparent 76%, rgb(255 138 42 / 4%));
+      mask: linear-gradient(#000, transparent 30%);
+    }
+    .flow-shell > *, .detail-panel > * { position: relative; z-index: 1; }
+    .section-kicker { color: var(--orange-bright); }
+    .flow-heading { color: #f8faff; }
+    .flow-intro { color: var(--muted); }
+
+    .flow-stage {
+      border-color: rgb(112 158 240 / 16%);
+      background: linear-gradient(145deg, rgb(12 32 67 / 72%), rgb(6 18 43 / 82%));
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / 3%);
+    }
+    .flow-stage-label { color: #aebdda; }
+    .flow-stage-label > .stage-number {
+      border: 1px solid rgb(255 174 101 / 45%);
+      color: #ffe0c1;
+      background: rgb(255 138 42 / 13%);
+      box-shadow: 0 0 16px rgb(255 138 42 / 9%);
+    }
+    .stage-chevron, .row-arrow, .stage-arrow { color: #6584b5; }
+    .stage-arrow { text-shadow: 0 0 18px rgb(79 145 255 / 40%); }
+
+    .chart-node {
+      border-color: color-mix(in srgb, var(--node) 58%, transparent);
+      border-left-width: 3px;
+      color: #eaf1ff;
+      background: linear-gradient(145deg, color-mix(in srgb, var(--node) 10%, #0b2148), rgb(7 22 49 / 82%));
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / 3%);
+      transition: transform .16s ease-out, box-shadow .18s ease-out, border-color .16s ease-out, background .18s ease-out;
+    }
+    .chart-node:hover {
+      border-color: color-mix(in srgb, var(--node) 80%, white 8%);
+      transform: translateY(-2px);
+      background: linear-gradient(145deg, color-mix(in srgb, var(--node) 15%, #0b2148), rgb(9 27 58 / 92%));
+      box-shadow: 0 12px 28px rgb(0 6 23 / 30%), 0 0 0 1px rgb(93 151 255 / 8%);
+    }
+    .chart-node:focus-visible, .copy-card:focus-visible { outline: 3px solid rgb(255 138 42 / 30%); outline-offset: 2px; }
+    .chart-node[aria-pressed="true"] {
+      border-color: var(--orange);
+      color: #fff;
+      background: linear-gradient(145deg, rgb(30 71 139 / 94%), rgb(11 31 67 / 96%));
+      box-shadow: 0 0 0 1px rgb(255 157 74 / 18%), 0 12px 30px rgb(0 6 23 / 38%), 0 0 24px rgb(255 138 42 / 9%);
+    }
+    .chart-node small { color: color-mix(in srgb, var(--node) 72%, white 28%); }
+    .chart-node[aria-pressed="true"] small { color: var(--orange-bright); }
+    .chart-node.has-memo { box-shadow: inset 0 0 0 1px rgb(255 255 255 / 5%), 0 0 0 2px color-mix(in srgb, var(--node) 65%, transparent); }
+    .memo-badge { color: #11182a; background: var(--orange-bright); }
+    .chart-node[aria-pressed="true"] .memo-badge { color: #15192a; background: #ffbd82; }
+    .tone-blue { --node: #5796ff; --node-soft: rgb(87 150 255 / 11%); }
+    .tone-green { --node: #58b8ff; --node-soft: rgb(88 184 255 / 10%); }
+    .tone-purple { --node: #8a8fff; --node-soft: rgb(138 143 255 / 10%); }
+    .tone-amber { --node: #ff9a42; --node-soft: rgb(255 154 66 / 11%); }
+    .tone-orange { --node: #ff8a2a; --node-soft: rgb(255 138 42 / 12%); }
+    .tone-red { --node: #ff7183; --node-soft: rgb(255 113 131 / 10%); }
+    .tone-teal { --node: #54cde3; --node-soft: rgb(84 205 227 / 10%); }
+
+    .decision-main {
+      border: 1px solid rgb(110 164 255 / 38%);
+      background: linear-gradient(145deg, #173e80 0%, #0b214b 68%, #111a3e 100%);
+      box-shadow: 0 14px 38px rgb(0 5 22 / 35%), 0 0 28px rgb(66 132 255 / 12%);
+    }
+    .decision-main small { color: #9fc4ff; }
+    .decision-main[aria-pressed="true"] { border-color: var(--orange); background: linear-gradient(145deg, #254f99, #102b5f); box-shadow: 0 0 30px rgb(255 138 42 / 18%); }
+    .branch { border-top-color: rgb(113 156 228 / 24%); background: transparent; }
+    .branch-label, .merge-cue { color: #8296b8; }
+    .merge-cue::before, .merge-cue::after { border-top-color: rgb(113 156 228 / 28%); }
+
+    .detail-panel { background: rgb(6 18 42 / 86%); }
+    .detail-head {
+      position: relative;
+      overflow: hidden;
+      border-color: rgb(122 173 255 / 20%);
+      background:
+        radial-gradient(circle at 86% 18%, rgb(255 138 42 / 13%), transparent 9rem),
+        linear-gradient(145deg, #153873 0%, #0a214d 58%, #08162f 100%);
+      box-shadow: 0 14px 34px rgb(0 5 22 / 32%), inset 0 1px 0 rgb(255 255 255 / 7%);
+    }
+    .detail-head::after {
+      content: "";
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      right: -75px;
+      top: -90px;
+      border: 1px solid rgb(255 171 97 / 25%);
+      border-radius: 50%;
+      box-shadow: 0 0 0 22px rgb(93 149 255 / 4%), 0 0 0 48px rgb(93 149 255 / 3%);
+      pointer-events: none;
+    }
+    .detail-head p { color: #aac8f4; }
+    .detail-head > p:first-of-type { border-color: rgb(255 175 105 / 24%); color: #ffd0a6; background: rgb(255 138 42 / 10%); }
+    .detail-head .summary { color: #d8e5f8; }
+    .detail-body { scrollbar-color: #37588a transparent; }
+    .detail-block + .detail-block { border-top-color: rgb(126 167 235 / 13%); }
+    .detail-block h3 { color: #9fb2d4; }
+    .script-list li { border-left-color: var(--blue); color: #dce8fb; background: rgb(42 91 166 / 15%); }
+    .point-list li, .warning-list li { color: #becce2; }
+    .point-list li::before { background: var(--blue); box-shadow: 0 0 8px rgb(79 145 255 / 45%); }
+    .warning-box { border-color: rgb(255 113 131 / 28%); background: var(--red-soft); }
+    .warning-box h3 { color: #ff94a1; }
+    .warning-list li::before { background: var(--red); }
+    .next-button {
+      border-color: rgb(118 165 245 / 28%);
+      color: #bcd5ff;
+      background: rgb(30 70 133 / 23%);
+      transition: transform .12s ease-out, border-color .16s ease-out, background .16s ease-out;
+    }
+    .next-button:hover { border-color: rgb(255 158 73 / 50%); color: #fff; background: var(--orange-soft); }
+    .next-button:active { transform: scale(.97); }
+    .detail-empty { color: var(--muted); }
+
+    .copy-card {
+      border-color: rgb(118 165 245 / 25%);
+      color: #e6efff;
+      background: linear-gradient(145deg, rgb(20 51 101 / 58%), rgb(8 25 55 / 72%));
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / 3%);
+    }
+    .copy-card:hover { border-color: rgb(255 154 67 / 58%); background: linear-gradient(145deg, rgb(30 66 126 / 68%), rgb(13 32 67 / 82%)); box-shadow: 0 10px 24px rgb(0 5 22 / 28%); }
+    .copy-card-preview { color: #90a6c9; }
+    .copy-card-action { color: #15192a; background: linear-gradient(135deg, var(--orange-bright), var(--orange)); box-shadow: 0 5px 15px rgb(255 122 24 / 20%); }
+    .copy-card.copied { border-color: rgb(70 214 164 / 55%); background: var(--green-soft); }
+    .copy-card.copied .copy-card-action { color: #041c17; background: var(--green); }
+    .copy-preview-popover {
+      border-color: rgb(126 171 247 / 25%);
+      color: #e5edfa;
+      background: rgb(7 20 46 / 94%);
+      box-shadow: 0 22px 64px rgb(0 4 18 / 55%), inset 0 1px 0 rgb(255 255 255 / 5%);
+      backdrop-filter: blur(24px) saturate(145%);
+    }
+    .copy-preview-head { border-bottom-color: rgb(126 167 235 / 14%); }
+    .copy-preview-head span { color: var(--orange-bright); }
+    .copy-preview-text { color: #becde4; }
+    .copy-feedback, .copy-data-status, .copy-status { color: var(--green); }
+    .copy-data-panel { border-color: rgb(118 165 245 / 19%); background: rgb(10 28 60 / 58%); }
+    .copy-data-panel > strong { color: #d6e4fa; }
+    .copy-data-button {
+      border-color: rgb(124 169 242 / 28%);
+      color: #c5d8f7;
+      background: rgb(15 38 77 / 72%);
+      transition: transform .12s ease-out, border-color .16s ease-out, background .16s ease-out;
+    }
+    .copy-data-button:hover { border-color: rgb(255 154 67 / 55%); color: #fff; background: var(--orange-soft); }
+    .copy-data-button:active { transform: scale(.97); }
+    .copy-data-button.primary { border-color: var(--orange); color: #12182a; background: linear-gradient(135deg, var(--orange-bright), var(--orange)); box-shadow: 0 8px 22px rgb(255 122 24 / 18%); }
+    .copy-data-button.primary:hover { color: #111728; background: linear-gradient(135deg, #ffc087, #ff9138); }
+    .memo-editor textarea {
+      border-color: rgb(119 163 241 / 38%);
+      color: #eaf1ff;
+      background: rgb(10 28 60 / 70%);
+      box-shadow: inset 0 1px 0 rgb(255 255 255 / 3%);
+    }
+    .save-hint { color: #8498b9; }
+
+    .export-dialog {
+      border: 1px solid rgb(126 171 247 / 24%);
+      color: var(--ink);
+      background: linear-gradient(155deg, #0b234b, #06142e);
+      box-shadow: 0 30px 90px rgb(0 3 14 / 70%), inset 0 1px 0 rgb(255 255 255 / 5%);
+    }
+    .export-dialog::backdrop { background: rgb(0 4 15 / 72%); backdrop-filter: blur(8px); }
+    .dialog-head { border-bottom-color: var(--line); }
+    .dialog-head p { color: var(--muted); }
+    .export-textarea { border-color: rgb(119 163 241 / 22%); color: #d8e5f8; background: rgb(3 12 30 / 70%); }
+
+    .mobile-back { color: #ffd1aa; }
+    .mobile-tabbar {
+      border-color: rgb(126 171 247 / 22%);
+      background: rgb(5 16 38 / 86%);
+      box-shadow: 0 18px 48px rgb(0 4 17 / 48%), inset 0 1px 0 rgb(255 255 255 / 5%);
+      backdrop-filter: blur(24px) saturate(150%);
+    }
+    .mobile-tabbar button { color: #879ab8; }
+    .mobile-tabbar button[aria-current="page"] { color: #121729; background: linear-gradient(135deg, var(--orange-bright), var(--orange)); box-shadow: 0 7px 20px rgb(255 122 24 / 24%); }
+
+    @media (max-width: 760px) {
+      body { background-color: var(--canvas); }
+      .topbar { border-bottom-color: rgb(116 161 239 / 14%); background: rgb(3 10 26 / 84%); }
+      .source-link { background: rgb(16 39 78 / 68%); }
+      .notice { border: 1px solid rgb(255 138 42 / 21%); color: #eec7a4; background: rgb(255 138 42 / 8%); box-shadow: inset 3px 0 0 var(--orange), 0 8px 28px rgb(0 4 17 / 20%); }
+      .session-bar { border: 1px solid var(--line); background: rgb(7 21 47 / 82%); box-shadow: 0 14px 38px rgb(0 4 17 / 25%), inset 0 1px 0 rgb(255 255 255 / 4%); }
+      .session-field input { border-color: rgb(119 163 241 / 36%); background: rgb(12 32 67 / 72%); }
+      .flow-shell, .detail-panel { border: 1px solid var(--line); box-shadow: 0 20px 58px rgb(0 4 17 / 38%), inset 0 1px 0 rgb(255 255 255 / 4%); }
+      .flow-stage { border-color: rgb(112 158 240 / 15%); background: rgb(8 24 53 / 72%); }
+      .branch { border-top-color: rgb(113 156 228 / 22%); background: transparent; }
+      .row-arrow::after { color: #6482b0; }
+      .detail-panel { background: rgb(6 18 42 / 92%); }
+      .copy-data-tools { grid-template-columns: minmax(0, 1fr); }
+      .source-link, .mobile-back { min-height: 44px; }
+      .source-link { display: inline-flex; align-items: center; }
+    }
+
+    @media (max-width: 360px) {
+      .session-bar { grid-template-columns: minmax(0, 1fr); }
+      .session-actions { grid-column: 1; }
+      .decision-main { width: min(240px, 94%); padding-inline: 34px; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
       *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
     }
     @media (prefers-reduced-transparency: reduce) {
-      .topbar, .mobile-tabbar, .copy-preview-popover { background: #fff; backdrop-filter: none; }
+      .topbar, .mobile-tabbar, .copy-preview-popover { background: #071630; backdrop-filter: none; }
+      .flow-shell, .detail-panel, .session-bar { background: #081a38; backdrop-filter: none; }
     }
     @media (hover: none), (pointer: coarse) {
       .copy-preview-popover { display: none; }
     }
     @media (prefers-contrast: more) {
-      .flow-shell, .detail-panel, .session-bar, .flow-stage { border: 1px solid #7d8d9d; }
-      .mobile-tabbar { border-color: #7d8d9d; background: #fff; }
+      :root { --muted: #ccd8eb; --line: rgb(174 204 255 / 58%); }
+      .flow-shell, .detail-panel, .session-bar, .flow-stage { border: 1px solid #adcaff; }
+      .mobile-tabbar { border-color: #adcaff; background: #06142e; }
+    }
+    @media (forced-colors: active) {
+      body { background: Canvas; }
+      .flow-shell, .detail-panel, .flow-stage, .session-bar, .topbar, .mobile-tabbar { border: 1px solid CanvasText; background: Canvas; box-shadow: none; }
+      .flow-shell::before, .detail-panel::before, .detail-head::after { display: none; }
+      .chart-node, .copy-card, .next-button, .copy-data-button { border: 1px solid ButtonText; background: ButtonFace; }
+      .chart-node[aria-pressed="true"], .mobile-tabbar button[aria-current="page"] { border: 2px solid Highlight; color: HighlightText; background: Highlight; }
     }
     @media print {
-      .topbar, .notice { position: static; }
+      :root { color-scheme: light; --ink: #112a46; --muted: #58697e; --line: #cad6e2; --paper: #fff; }
+      body { color: var(--ink); background: #fff; }
+      .topbar, .notice, .session-bar { position: static; color: var(--ink); background: #fff; box-shadow: none; backdrop-filter: none; }
+      .topbar { border-bottom: 1px solid var(--line); }
+      .notice { border: 1px solid #d7a25d; }
+      .brand h1, .brand p, .notice strong, .session-field span, .memo-count { color: var(--ink); }
+      .source-link, .session-field input { border-color: #9aabba; color: var(--ink); background: #fff; box-shadow: none; }
       .session-actions { display: none; }
       .workspace { display: block; max-width: none; padding: 10mm; }
-      .detail-panel { margin-top: 12mm; box-shadow: none; }
-      .flow-shell { box-shadow: none; }
+      .flow-shell, .detail-panel, .flow-stage { color: var(--ink); background: #fff; box-shadow: none; backdrop-filter: none; }
+      .flow-shell::before, .detail-panel::before { display: none; }
+      .detail-panel { margin-top: 12mm; }
+      .section-kicker, .flow-heading, .flow-intro, .flow-stage-label, .branch-label, .merge-cue,
+      .detail-head p, .detail-head .summary, .detail-block h3, .point-list li, .warning-list li,
+      .copy-card, .copy-card-preview, .copy-data-panel > strong, .copy-data-note, .save-hint { color: var(--ink); }
+      .detail-head { border: 1px solid #9aabba; color: var(--ink); background: #eef3f8; box-shadow: none; }
+      .detail-head::after { display: none; }
+      .detail-head > p:first-of-type { border-color: #9aabba; color: var(--ink); background: #fff; }
+      .chart-node, .chart-node[aria-pressed="true"], .decision-main, .decision-main[aria-pressed="true"],
+      .copy-card, .copy-card.copied, .copy-data-panel, .script-list li, .warning-box, .memo-editor textarea,
+      .next-button, .copy-data-button {
+        border-color: #9aabba;
+        color: var(--ink);
+        background: #fff;
+        box-shadow: none;
+      }
+      .chart-node small, .chart-node[aria-pressed="true"] small, .copy-card-action, .memo-badge { color: var(--ink); background: #e8eef5; }
+      .mobile-tabbar, .mobile-back { display: none !important; }
       .detail-body { max-height: none; }
     }
   </style>
@@ -517,7 +896,7 @@
       <p class="section-kicker">INTERACTIVE FLOWCHART</p>
       <h2 id="flowTitle" class="flow-heading">面談の流れを選ぶ</h2>
       <p class="flow-intro">各ボックスを選択するとトーク例と担当者メモが開きます。</p>
-      <div id="flowMap" class="flow-map" aria-label="クロージング面談フローチャート"></div>
+      <div id="flowMap" class="flow-map" role="group" aria-label="クロージング面談フローチャート"></div>
     </section>
 
     <aside id="detailPanel" class="detail-panel" aria-live="polite" aria-label="選択した項目の詳細">
@@ -960,8 +1339,8 @@ LiveNova
       opening: "blue", hearing: "green", palmuRoute: "purple", knownActive: "purple",
       knownInactive: "purple", palmuNew: "purple", palmuFit: "green", liveNova: "blue",
       bonusCheck: "amber", bonus: "amber", bonusSkip: "green", closing: "teal",
-      uncertain: "amber", consider: "amber", ready: "teal", timeCheck: "purple",
-      procedureNow: "teal", procedureLater: "amber", procedure: "blue",
+      uncertain: "amber", consider: "amber", ready: "orange", timeCheck: "purple",
+      procedureNow: "orange", procedureLater: "amber", procedure: "orange",
       prestream: "blue", end: "green"
     };
 
@@ -1323,7 +1702,7 @@ LiveNova
 
       openStageForNode(id);
 
-      let body = '<div class="detail-head"><button type="button" class="mobile-back" data-mobile-back>‹ フローへ戻る</button><p>' + escapeHtml(node.stage) + '</p><h2>' +
+      let body = '<div class="detail-head"><button type="button" class="mobile-back" data-mobile-back>‹ フローへ戻る</button><p>' + escapeHtml(node.stage) + '</p><h2 id="detailTitle" tabindex="-1">' +
         escapeHtml(node.title) + '</h2><p class="summary">' + escapeHtml(node.summary) + '</p></div><div class="detail-body">';
 
       if (node.scripts && node.scripts.length) {
@@ -1339,7 +1718,7 @@ LiveNova
         body += '<section class="detail-block warning-box"><h3>最新版・表現の確認</h3>' + listMarkup(node.warnings, "warning-list") + '</section>';
       }
       body += '<section class="detail-block memo-editor"><h3>この箇所のメモ</h3>' +
-        '<textarea id="nodeMemo" data-note-id="' + escapeHtml(id) + '" placeholder="相手の反応・確認事項・次回対応などを入力">' +
+        '<textarea id="nodeMemo" data-note-id="' + escapeHtml(id) + '" aria-label="この箇所のメモ" placeholder="相手の反応・確認事項・次回対応などを入力">' +
         escapeHtml(sessionState.notes[id] || "") + '</textarea><p class="save-hint">入力内容はこのブラウザに自動保存されます。</p></section>';
       if (node.next && node.next.length) {
         body += '<section class="detail-block"><h3>次の候補</h3><div class="next-links">' +
@@ -1353,7 +1732,13 @@ LiveNova
       const panel = document.getElementById("detailPanel");
       panel.innerHTML = body;
       if (history.replaceState && (shouldNavigate || location.hash)) history.replaceState(null, "", "#" + id);
-      if (shouldNavigate && mobileMedia.matches) setMobileView("detail", true);
+      if (shouldNavigate && mobileMedia.matches) {
+        setMobileView("detail", true);
+        requestAnimationFrame(function () {
+          const heading = document.getElementById("detailTitle");
+          if (heading) heading.focus({ preventScroll: true });
+        });
+      }
     }
 
     function buildExportText() {
@@ -1562,6 +1947,10 @@ LiveNova
       const mobileBack = event.target.closest("[data-mobile-back]");
       if (mobileBack) {
         setMobileView("flow", true);
+        requestAnimationFrame(function () {
+          const activeButton = document.querySelector('.chart-node[aria-pressed="true"]');
+          if (activeButton) activeButton.focus({ preventScroll: true });
+        });
         return;
       }
       const mobileViewButton = event.target.closest("[data-mobile-view-target]");
