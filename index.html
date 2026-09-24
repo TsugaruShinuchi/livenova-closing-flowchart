@@ -556,7 +556,13 @@
 
   <script>
     const STORAGE_KEY = "livenova-closing-session-v1";
-    const sessionState = { candidateName: "", staffName: "", notes: {}, copyItemsOverride: null };
+    const sessionState = {
+      candidateName: "",
+      staffName: "",
+      notes: {},
+      copyItemsOverride: null,
+      copyItemsPublishedBase: null
+    };
     const mobileMedia = window.matchMedia("(max-width: 760px)");
     const hoverPreviewMedia = window.matchMedia("(hover: hover) and (pointer: fine)");
     let activeNodeId = "opening";
@@ -962,6 +968,9 @@ LiveNova
     const defaultCopyItems = DATA.nodes.prestream.copyItems.map(function (item, index) {
       return { id: item.id || "copy-item-" + (index + 1), title: item.title, text: item.text };
     });
+    let latestPublishedCopyItems = defaultCopyItems.map(function (item) {
+      return { id: item.id, title: item.title, text: item.text };
+    });
 
     const escapeHtml = function (value) {
       return String(value)
@@ -979,11 +988,14 @@ LiveNova
         sessionState.staffName = typeof saved.staffName === "string" ? saved.staffName : "";
         sessionState.notes = saved.notes && typeof saved.notes === "object" ? saved.notes : {};
         sessionState.copyItemsOverride = Array.isArray(saved.copyItemsOverride) ? saved.copyItemsOverride : null;
+        sessionState.copyItemsPublishedBase = Array.isArray(saved.copyItemsPublishedBase) ?
+          saved.copyItemsPublishedBase : null;
       } catch (error) {
         sessionState.candidateName = "";
         sessionState.staffName = "";
         sessionState.notes = {};
         sessionState.copyItemsOverride = null;
+        sessionState.copyItemsPublishedBase = null;
       }
     }
 
@@ -1113,7 +1125,7 @@ LiveNova
           '<span class="copy-card-action">コピー</span></button>';
       }).join("") + '</div><p id="copyCardFeedback" class="copy-feedback" aria-live="polite"></p>' +
         '<div class="copy-data-panel"><strong>CSVで項目を編集</strong>' +
-        '<p class="copy-data-note">1行が1つのコピー項目です。本文セル内の改行も使えます。読み込んだ内容はこの端末だけに保存され、共有版はGitHubから更新できます。</p>' +
+        '<p class="copy-data-note">1行が1つのコピー項目です。本文セル内の改行も使えます。読み込んだ内容はこの端末だけに保存され、共有版に新しい項目が追加された場合は自動で取り込みます。</p>' +
         '<div class="copy-data-tools"><a class="copy-data-button" href="copy-items.csv" download>CSVをダウンロード</a>' +
         '<button type="button" class="copy-data-button primary" data-import-copy-csv>編集したCSVを読み込む</button>' + resetButton +
         '<a class="copy-data-button" href="https://github.com/TsugaruShinuchi/livenova-closing-flowchart/edit/main/copy-items.csv" target="_blank" rel="noreferrer">共有版をGitHubで編集</a></div>' +
@@ -1203,18 +1215,65 @@ LiveNova
       });
     }
 
+    function copyItemsMatch(left, right) {
+      return Boolean(left && right) &&
+        String(left.id || "") === String(right.id || "") &&
+        String(left.title || "") === String(right.title || "") &&
+        String(left.text || "") === String(right.text || "");
+    }
+
+    function mergePublishedCopyItems(publishedItems, localItems, publishedBase) {
+      const localById = new Map(localItems.map(function (item) { return [item.id, item]; }));
+      const baseItems = Array.isArray(publishedBase) ? publishedBase : [];
+      const baseById = new Map(baseItems.map(function (item) { return [item.id, item]; }));
+      const publishedIds = new Set(publishedItems.map(function (item) { return item.id; }));
+      const hasPublishedBase = Array.isArray(publishedBase);
+      const merged = [];
+
+      publishedItems.forEach(function (publishedItem) {
+        const localItem = localById.get(publishedItem.id);
+        const baseItem = baseById.get(publishedItem.id);
+
+        if (!localItem) {
+          if (!(hasPublishedBase && baseItem)) merged.push(publishedItem);
+          return;
+        }
+
+        merged.push(baseItem && copyItemsMatch(localItem, baseItem) ? publishedItem : localItem);
+      });
+
+      localItems.forEach(function (localItem) {
+        if (publishedIds.has(localItem.id)) return;
+        const baseItem = baseById.get(localItem.id);
+        if (!baseItem || !copyItemsMatch(localItem, baseItem)) merged.push(localItem);
+      });
+
+      return merged;
+    }
+
     async function loadPublishedCopyItems(force) {
-      if (sessionState.copyItemsOverride && !force) {
-        applyCopyItems(sessionState.copyItemsOverride);
-        return;
-      }
       try {
         const response = await fetch("copy-items.csv", { cache: "no-store" });
         if (!response.ok) throw new Error("CSVを取得できませんでした");
-        applyCopyItems(parseCopyItemsCsv(await response.text()));
+        const publishedItems = parseCopyItemsCsv(await response.text());
+        latestPublishedCopyItems = publishedItems;
+
+        if (sessionState.copyItemsOverride && !force) {
+          const mergedItems = mergePublishedCopyItems(
+            publishedItems,
+            sessionState.copyItemsOverride,
+            sessionState.copyItemsPublishedBase
+          );
+          sessionState.copyItemsOverride = mergedItems;
+          sessionState.copyItemsPublishedBase = publishedItems;
+          saveSession();
+          applyCopyItems(mergedItems);
+        } else {
+          applyCopyItems(publishedItems);
+        }
         if (activeNodeId === "prestream") selectNode("prestream", false);
       } catch (error) {
-        applyCopyItems(defaultCopyItems);
+        applyCopyItems(sessionState.copyItemsOverride || defaultCopyItems);
         if (activeNodeId === "prestream") selectNode("prestream", false);
       }
     }
@@ -1225,6 +1284,9 @@ LiveNova
       try {
         const items = parseCopyItemsCsv(await file.text());
         sessionState.copyItemsOverride = items;
+        sessionState.copyItemsPublishedBase = latestPublishedCopyItems.map(function (item) {
+          return { id: item.id, title: item.title, text: item.text };
+        });
         saveSession();
         applyCopyItems(items);
         selectNode("prestream", false);
@@ -1240,6 +1302,7 @@ LiveNova
 
     async function resetCopyItemsCsv() {
       sessionState.copyItemsOverride = null;
+      sessionState.copyItemsPublishedBase = null;
       saveSession();
       applyCopyItems(defaultCopyItems);
       selectNode("prestream", false);
