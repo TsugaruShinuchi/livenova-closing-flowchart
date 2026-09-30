@@ -237,6 +237,44 @@
     .copy-card-action { position: absolute; top: 50%; right: 12px; padding: 4px 8px; border-radius: 99px; color: #fff; background: var(--blue); font-size: .68rem; font-weight: 850; transform: translateY(-50%); }
     .copy-card.copied { border-color: var(--green); background: var(--green-soft); }
     .copy-card.copied .copy-card-action { background: var(--green); }
+    .copy-image-entry { display: grid; min-width: 0; gap: 7px; }
+    .copy-image-card {
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 150px;
+      padding: 10px 12px;
+      border-color: rgb(255 138 42 / 45%);
+    }
+    .copy-image-thumb {
+      display: block;
+      width: 72px;
+      aspect-ratio: 941 / 1672;
+      object-fit: contain;
+      border: 1px solid rgb(126 171 247 / 28%);
+      border-radius: 10px;
+      background: #071630;
+      box-shadow: 0 0 18px rgb(79 145 255 / 12%);
+    }
+    .copy-image-body { min-width: 0; text-align: left; }
+    .copy-image-card .copy-card-preview { white-space: normal; }
+    .copy-image-card .copy-card-action { position: static; justify-self: end; transform: none; }
+    .copy-image-open {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      justify-self: start;
+      min-height: 36px;
+      padding: 6px 9px;
+      border-radius: 8px;
+      color: var(--blue);
+      font-size: .72rem;
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .copy-image-open:hover { background: var(--blue-soft); }
+    .copy-image-open:focus-visible { outline: 3px solid rgb(36 119 181 / 22%); outline-offset: 2px; }
     .copy-preview-popover {
       position: fixed;
       z-index: 120;
@@ -423,6 +461,10 @@
       .copy-card strong { font-size: .85rem; }
       .copy-card-preview { font-size: .71rem; }
       .copy-card-action { right: 10px; }
+      .copy-image-card { grid-template-columns: 62px minmax(0, 1fr); min-height: 132px; padding: 10px 11px; }
+      .copy-image-thumb { grid-row: 1 / span 2; width: 62px; }
+      .copy-image-card .copy-card-action { grid-column: 2; justify-self: start; margin-top: 6px; }
+      .copy-image-open { min-height: 44px; }
       .copy-preview-popover { display: none; }
       .copy-data-tools { display: grid; grid-template-columns: minmax(0, 1fr); }
       .copy-data-button { width: 100%; min-height: 44px; }
@@ -642,7 +684,7 @@
       background: linear-gradient(145deg, color-mix(in srgb, var(--node) 15%, #0b2148), rgb(9 27 58 / 92%));
       box-shadow: 0 12px 28px rgb(0 6 23 / 30%), 0 0 0 1px rgb(93 151 255 / 8%);
     }
-    .chart-node:focus-visible, .copy-card:focus-visible { outline: 3px solid rgb(255 138 42 / 30%); outline-offset: 2px; }
+    .chart-node:focus-visible, .copy-card:focus-visible, .copy-image-open:focus-visible { outline: 3px solid rgb(255 138 42 / 30%); outline-offset: 2px; }
     .chart-node[aria-pressed="true"] {
       border-color: var(--orange);
       color: #fff;
@@ -728,6 +770,11 @@
     .copy-card-action { color: #15192a; background: linear-gradient(135deg, var(--orange-bright), var(--orange)); box-shadow: 0 5px 15px rgb(255 122 24 / 20%); }
     .copy-card.copied { border-color: rgb(70 214 164 / 55%); background: var(--green-soft); }
     .copy-card.copied .copy-card-action { color: #041c17; background: var(--green); }
+    .copy-image-card { border-color: rgb(255 154 67 / 42%); background: linear-gradient(145deg, rgb(28 55 104 / 68%), rgb(11 25 54 / 82%)); }
+    .copy-image-card:hover { border-color: rgb(255 171 96 / 72%); box-shadow: 0 12px 30px rgb(0 5 22 / 34%), 0 0 22px rgb(255 122 24 / 10%); }
+    .copy-image-thumb { border-color: rgb(255 154 67 / 35%); box-shadow: 0 0 20px rgb(255 122 24 / 12%); }
+    .copy-image-open { color: var(--orange-bright); }
+    .copy-image-open:hover { color: #fff; background: var(--orange-soft); }
     .copy-preview-popover {
       border-color: rgb(126 171 247 / 25%);
       color: #e5edfa;
@@ -823,7 +870,7 @@
       body { background: Canvas; }
       .flow-shell, .detail-panel, .flow-stage, .session-bar, .topbar, .mobile-tabbar { border: 1px solid CanvasText; background: Canvas; box-shadow: none; }
       .flow-shell::before, .detail-panel::before, .detail-head::after { display: none; }
-      .chart-node, .copy-card, .next-button, .copy-data-button { border: 1px solid ButtonText; background: ButtonFace; }
+      .chart-node, .copy-card, .copy-image-open, .next-button, .copy-data-button { border: 1px solid ButtonText; background: ButtonFace; }
       .chart-node[aria-pressed="true"], .mobile-tabbar button[aria-current="page"] { border: 2px solid Highlight; color: HighlightText; background: Highlight; }
     }
     @media print {
@@ -841,12 +888,12 @@
       .detail-panel { margin-top: 12mm; }
       .section-kicker, .flow-heading, .flow-intro, .flow-stage-label, .branch-label, .merge-cue,
       .detail-head p, .detail-head .summary, .detail-block h3, .point-list li, .warning-list li,
-      .copy-card, .copy-card-preview, .copy-data-panel > strong, .copy-data-note, .save-hint { color: var(--ink); }
+      .copy-card, .copy-card-preview, .copy-image-open, .copy-data-panel > strong, .copy-data-note, .save-hint { color: var(--ink); }
       .detail-head { border: 1px solid #9aabba; color: var(--ink); background: #eef3f8; box-shadow: none; }
       .detail-head::after { display: none; }
       .detail-head > p:first-of-type { border-color: #9aabba; color: var(--ink); background: #fff; }
       .chart-node, .chart-node[aria-pressed="true"], .decision-main, .decision-main[aria-pressed="true"],
-      .copy-card, .copy-card.copied, .copy-data-panel, .script-list li, .warning-box, .memo-editor textarea,
+      .copy-card, .copy-card.copied, .copy-image-open, .copy-data-panel, .script-list li, .warning-box, .memo-editor textarea,
       .next-button, .copy-data-button {
         border-color: #9aabba;
         color: var(--ink);
@@ -1298,6 +1345,11 @@ LiveNova
             { title: "初週・初配信前のスケジュール設定", text: "初週・初配信前のスケジュール設定" },
             { title: "配信前面談の日時設定", text: "配信前面談の日時設定" }
           ],
+          copyImage: {
+            title: "デビュー前の準備（画像）",
+            description: "タップして画像をクリップボードへコピー",
+            src: "assets/debut-preparation-flow.png"
+          },
           warnings: ["登録完了の連絡が来るまでは配信を行わないよう案内する", "他配信の閲覧・枠周りは可能と案内する"],
           next: ["end"]
         },
@@ -1493,16 +1545,25 @@ LiveNova
       }).join("") + '</ul>';
     }
 
-    function copyItemsMarkup(items) {
+    function copyItemsMarkup(items, imageItem) {
       const resetButton = sessionState.copyItemsOverride ?
         '<button type="button" class="copy-data-button" data-reset-copy-csv>公開CSVに戻す</button>' : '';
+      const imageCard = imageItem ? '<div class="copy-image-entry"><button type="button" class="copy-card copy-image-card" ' +
+        'data-copy-image="' + escapeHtml(imageItem.src) + '" data-copy-image-title="' + escapeHtml(imageItem.title) + '" ' +
+        'aria-label="' + escapeHtml(imageItem.title + 'をコピー') + '">' +
+        '<img class="copy-image-thumb" src="' + escapeHtml(imageItem.src) + '" alt="" width="72" height="128" loading="lazy" decoding="async">' +
+        '<span class="copy-image-body"><strong>' + escapeHtml(imageItem.title) + '</strong>' +
+        '<span class="copy-card-preview">' + escapeHtml(imageItem.description) + '</span></span>' +
+        '<span class="copy-card-action" aria-hidden="true">画像をコピー</span></button>' +
+        '<a class="copy-image-open" data-copy-image-open data-copy-image-fallback href="' + escapeHtml(imageItem.src) + '" target="_blank" rel="noopener">' +
+        'コピーできない場合は画像を開く</a></div>' : '';
       return '<div class="copy-card-list">' + items.map(function (item, index) {
         const preview = item.text.replace(/\s+/g, " ").trim().slice(0, 72);
         return '<button type="button" class="copy-card" data-copy-index="' + index + '">' +
           '<strong>' + escapeHtml(item.title) + '</strong>' +
           '<span class="copy-card-preview">' + escapeHtml(preview) + (item.text.length > 72 ? "…" : "") + '</span>' +
           '<span class="copy-card-action">コピー</span></button>';
-      }).join("") + '</div><p id="copyCardFeedback" class="copy-feedback" aria-live="polite"></p>' +
+      }).join("") + imageCard + '</div><p id="copyCardFeedback" class="copy-feedback" data-copy-image-status aria-live="polite"></p>' +
         '<div class="copy-data-panel"><strong>CSVで項目を編集</strong>' +
         '<p class="copy-data-note">1行が1つのコピー項目です。本文セル内の改行も使えます。読み込んだ内容はこの端末だけに保存され、共有版に新しい項目が追加された場合は自動で取り込みます。</p>' +
         '<div class="copy-data-tools"><a class="copy-data-button" href="copy-items.csv" download>CSVをダウンロード</a>' +
@@ -1712,7 +1773,7 @@ LiveNova
         body += '<section class="detail-block"><h3>担当者メモ</h3>' + listMarkup(node.points, "point-list") + '</section>';
       }
       if (node.copyItems && node.copyItems.length) {
-        body += '<section class="detail-block"><h3>タップしてコピー</h3>' + copyItemsMarkup(node.copyItems) + '</section>';
+        body += '<section class="detail-block"><h3>タップしてコピー</h3>' + copyItemsMarkup(node.copyItems, node.copyImage) + '</section>';
       }
       if (node.warnings && node.warnings.length) {
         body += '<section class="detail-block warning-box"><h3>最新版・表現の確認</h3>' + listMarkup(node.warnings, "warning-list") + '</section>';
@@ -1797,23 +1858,60 @@ LiveNova
       }
     }
 
+    function resetCopyCardStates() {
+      document.querySelectorAll(".copy-card").forEach(function (card) {
+        card.classList.remove("copied");
+        const action = card.querySelector(".copy-card-action");
+        if (action) action.textContent = card.hasAttribute("data-copy-image") ? "画像をコピー" : "コピー";
+      });
+    }
+
     async function copyCardText(button) {
       const node = DATA.nodes[activeNodeId];
       const item = node && node.copyItems ? node.copyItems[Number(button.dataset.copyIndex)] : null;
       if (!item) return;
       const copied = await writeClipboardText(personalize(item.text));
       const feedback = document.getElementById("copyCardFeedback");
-      document.querySelectorAll(".copy-card").forEach(function (card) {
-        card.classList.remove("copied");
-        const action = card.querySelector(".copy-card-action");
-        if (action) action.textContent = "コピー";
-      });
+      resetCopyCardStates();
       if (copied) {
         button.classList.add("copied");
         button.querySelector(".copy-card-action").textContent = "コピー済み";
         if (feedback) feedback.textContent = "「" + item.title + "」をコピーしました。";
       } else if (feedback) {
         feedback.textContent = "コピーできませんでした。ブラウザのクリップボード設定をご確認ください。";
+      }
+    }
+
+    async function copyCardImage(button) {
+      const imageUrl = button.dataset.copyImage;
+      const imageTitle = button.dataset.copyImageTitle || "画像";
+      const feedback = document.getElementById("copyCardFeedback");
+      resetCopyCardStates();
+      if (feedback) feedback.textContent = "画像をコピーしています…";
+      try {
+        if (!imageUrl || !navigator.clipboard || typeof navigator.clipboard.write !== "function" || typeof ClipboardItem === "undefined") {
+          throw new Error("Image clipboard is unavailable");
+        }
+        if (typeof ClipboardItem.supports === "function" && !ClipboardItem.supports("image/png")) {
+          throw new Error("PNG clipboard is unsupported");
+        }
+        const pngBlob = fetch(imageUrl, { cache: "force-cache" }).then(function (response) {
+          if (!response.ok) throw new Error("Image fetch failed");
+          return response.blob();
+        }).then(function (blob) {
+          if (blob.type === "image/png") return blob;
+          return blob.arrayBuffer().then(function (buffer) {
+            return new Blob([buffer], { type: "image/png" });
+          });
+        });
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": pngBlob })]);
+        button.classList.add("copied");
+        button.querySelector(".copy-card-action").textContent = "コピー済み";
+        if (feedback) feedback.textContent = "「" + imageTitle + "」を画像としてコピーしました。";
+      } catch (error) {
+        if (feedback) feedback.textContent = "このブラウザでは画像を直接コピーできません。下の「画像を開く」から長押しして保存・コピーしてください。";
+        const openLink = document.querySelector("[data-copy-image-open]");
+        if (openLink) openLink.focus({ preventScroll: true });
       }
     }
 
@@ -1963,6 +2061,11 @@ LiveNova
         copyCardText(copyButton);
         return;
       }
+      const copyImageButton = event.target.closest("[data-copy-image]");
+      if (copyImageButton) {
+        copyCardImage(copyImageButton);
+        return;
+      }
       const button = event.target.closest("[data-node]");
       if (!button) return;
       selectNode(button.dataset.node, true);
@@ -1981,24 +2084,24 @@ LiveNova
     });
 
     document.addEventListener("pointerover", function (event) {
-      const button = event.target.closest(".copy-card");
+      const button = event.target.closest(".copy-card[data-copy-index]");
       if (!button || (event.relatedTarget && button.contains(event.relatedTarget))) return;
       showCopyPreview(button);
     });
 
     document.addEventListener("pointerout", function (event) {
-      const button = event.target.closest(".copy-card");
+      const button = event.target.closest(".copy-card[data-copy-index]");
       if (!button || (event.relatedTarget && button.contains(event.relatedTarget))) return;
       queueCopyPreviewHide(button);
     });
 
     document.addEventListener("focusin", function (event) {
-      const button = event.target.closest(".copy-card");
+      const button = event.target.closest(".copy-card[data-copy-index]");
       if (button) showCopyPreview(button);
     });
 
     document.addEventListener("focusout", function (event) {
-      const button = event.target.closest(".copy-card");
+      const button = event.target.closest(".copy-card[data-copy-index]");
       if (button) hideCopyPreview(button);
     });
 
