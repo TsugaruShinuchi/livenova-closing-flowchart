@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#06152f">
+  <meta name="description" content="LiveNovaの定型文と画像をすばやくコピーできるクイックコピー画面です。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='17' fill='%2306152f'/%3E%3Cpath d='m32 8 5.4 18.6L56 32l-18.6 5.4L32 56l-5.4-18.6L8 32l18.6-5.4Z' fill='%23ff9b4a'/%3E%3C/svg%3E">
+  <title>クイックコピー | LiveNova</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #040b1d;
+      --bg-deep: #020713;
+      --surface: rgba(10, 28, 62, .84);
+      --surface-strong: rgba(13, 36, 78, .96);
+      --line: rgba(124, 170, 246, .18);
+      --line-strong: rgba(255, 157, 73, .52);
+      --text: #f5f8ff;
+      --muted: #9eb1d1;
+      --orange: #ff7a18;
+      --orange-light: #ffb16e;
+      --green: #55dfad;
+      --danger: #ff8c91;
+      --shadow: 0 18px 48px rgba(0, 4, 20, .35);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      min-width: 320px;
+      min-height: 100%;
+      background: var(--bg-deep);
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 18% -4%, rgba(35, 100, 199, .38), transparent 32rem),
+        radial-gradient(circle at 95% 22%, rgba(255, 122, 24, .13), transparent 25rem),
+        linear-gradient(180deg, #071a3a 0, var(--bg) 38%, var(--bg-deep) 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      content: "";
+      pointer-events: none;
+      opacity: .48;
+      background-image:
+        radial-gradient(circle, rgba(255,255,255,.72) 0 1px, transparent 1.3px),
+        radial-gradient(circle, rgba(109,166,255,.62) 0 1px, transparent 1.4px);
+      background-position: 18px 24px, 77px 92px;
+      background-size: 116px 116px, 173px 173px;
+      mask-image: linear-gradient(to bottom, #000, transparent 80%);
+    }
+
+    button, input { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+
+    .skip-link {
+      position: fixed;
+      top: 8px;
+      left: 8px;
+      z-index: 100;
+      display: inline-flex;
+      min-height: 44px;
+      padding: 10px 14px;
+      align-items: center;
+      border-radius: 12px;
+      color: #10182a;
+      background: #fff;
+      font-weight: 800;
+      transform: translateY(-150%);
+    }
+
+    .skip-link:focus { transform: none; }
+
+    .shell {
+      width: min(100%, 920px);
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0 auto;
+    }
+
+    .hero {
+      position: relative;
+      padding: max(28px, env(safe-area-inset-top)) 18px 22px;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      position: absolute;
+      top: -72px;
+      right: -46px;
+      width: 190px;
+      aspect-ratio: 1;
+      content: "";
+      border: 1px solid rgba(255, 153, 67, .28);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 36% 32%, rgba(255, 202, 145, .7), transparent 5%),
+        radial-gradient(circle at 48% 50%, #ff7920 0, #8b2f0f 38%, #150d1b 70%);
+      box-shadow: 0 0 46px rgba(255, 112, 20, .24);
+      opacity: .52;
+      pointer-events: none;
+    }
+
+    .brand {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: #dfeaff;
+      font-size: .72rem;
+      font-weight: 850;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      border: 1px solid rgba(255, 173, 102, .52);
+      border-radius: 10px;
+      color: var(--orange-light);
+      background: rgba(255, 122, 24, .11);
+      box-shadow: inset 0 0 18px rgba(255, 122, 24, .09);
+    }
+
+    .hero h1 {
+      position: relative;
+      z-index: 1;
+      max-width: 560px;
+      margin: 22px 0 8px;
+      font-size: clamp(2rem, 8vw, 3.2rem);
+      font-weight: 880;
+      letter-spacing: -.045em;
+      line-height: 1.05;
+    }
+
+    .hero h1 span { color: var(--orange-light); }
+
+    .hero p {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      color: var(--muted);
+      font-size: .88rem;
+      line-height: 1.7;
+    }
+
+    .search-dock {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 10px 14px 12px;
+      border-top: 1px solid rgba(124, 170, 246, .08);
+      border-bottom: 1px solid var(--line);
+      background: rgba(4, 13, 32, .86);
+      -webkit-backdrop-filter: blur(18px) saturate(135%);
+      backdrop-filter: blur(18px) saturate(135%);
+    }
+
+    .search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 15px;
+      width: 19px;
+      height: 19px;
+      color: #8fa6cc;
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      min-height: 48px;
+      padding: 11px 44px 11px 44px;
+      border: 1px solid rgba(126, 167, 235, .24);
+      border-radius: 15px;
+      outline: none;
+      color: var(--text);
+      background: rgba(13, 32, 68, .9);
+      box-shadow: inset 0 1px rgba(255,255,255,.04);
+      appearance: none;
+    }
+
+    .search-input::placeholder { color: #8399be; }
+    .search-input:focus { border-color: rgba(255, 161, 79, .72); box-shadow: 0 0 0 4px rgba(255, 122, 24, .12); }
+
+    .clear-search {
+      position: absolute;
+      right: 2px;
+      display: none;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      color: #b8c8e0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .clear-search.is-visible { display: grid; place-items: center; }
+    .clear-search:hover { color: #fff; background: rgba(255,255,255,.06); }
+
+    .search-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin: 8px 4px 0;
+      color: #8499bb;
+      font-size: .72rem;
+      font-weight: 720;
+    }
+
+    .search-meta a {
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+      color: #acbee0;
+      text-underline-offset: 3px;
+    }
+
+    main { padding: 18px 14px calc(38px + env(safe-area-inset-bottom)); }
+
+    .card-list {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 11px;
+      min-width: 0;
+    }
+
+    .copy-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 7px 12px;
+      width: 100%;
+      min-width: 0;
+      min-height: 78px;
+      padding: 15px 14px 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 17px;
+      color: inherit;
+      background: linear-gradient(145deg, rgba(16, 43, 90, .84), rgba(8, 23, 52, .88));
+      box-shadow: 0 10px 26px rgba(0, 4, 20, .19), inset 0 1px rgba(255,255,255,.035);
+      text-align: left;
+      cursor: pointer;
+      overflow: hidden;
+      transition: border-color .2s ease, background .2s ease, transform .16s ease, box-shadow .2s ease;
+    }
+
+    .copy-card::before {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3px;
+      content: "";
+      background: linear-gradient(var(--orange-light), var(--orange));
+      opacity: .72;
+    }
+
+    .copy-card:hover {
+      border-color: var(--line-strong);
+      background: linear-gradient(145deg, rgba(23, 56, 112, .92), rgba(11, 29, 63, .94));
+      box-shadow: 0 14px 34px rgba(0, 4, 20, .28), 0 0 22px rgba(255, 122, 24, .07);
+      transform: translateY(-1px);
+    }
+
+    .copy-card:active { transform: scale(.985); }
+    .copy-card:focus-visible, .image-open:focus-visible, .clear-search:focus-visible, .retry-button:focus-visible { outline: 3px solid rgba(255, 168, 91, .45); outline-offset: 3px; }
+
+    .copy-title {
+      display: block;
+      min-width: 0;
+      font-size: .93rem;
+      font-weight: 820;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .copy-preview {
+      display: -webkit-box;
+      grid-column: 1 / -1;
+      min-width: 0;
+      margin: 0;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: .76rem;
+      line-height: 1.55;
+      overflow-wrap: anywhere;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .copy-action {
+      align-self: start;
+      min-width: 58px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      color: #171a29;
+      background: linear-gradient(135deg, var(--orange-light), var(--orange));
+      box-shadow: 0 5px 14px rgba(255, 122, 24, .18);
+      font-size: .68rem;
+      font-weight: 880;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .copy-card.is-copied { border-color: rgba(85, 223, 173, .58); background: linear-gradient(145deg, rgba(13, 83, 76, .7), rgba(7, 39, 49, .9)); }
+    .copy-card.is-copied::before, .copy-card.is-copied .copy-action { background: var(--green); }
+    .copy-card.is-copied .copy-action { color: #071d19; }
+
+    .image-section {
+      margin-top: 28px;
+      padding-top: 22px;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-label {
+      margin: 0 2px 11px;
+      color: #879fc5;
+      font-size: .69rem;
+      font-weight: 850;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .image-card {
+      grid-template-columns: 74px minmax(0, 1fr);
+      min-height: 126px;
+      border-color: rgba(255, 157, 73, .32);
+    }
+
+    .image-thumb {
+      grid-row: 1 / span 2;
+      align-self: stretch;
+      width: 74px;
+      min-height: 96px;
+      border: 1px solid rgba(255, 167, 90, .28);
+      border-radius: 11px;
+      background: #030813;
+      object-fit: cover;
+    }
+
+    .image-card .copy-title { padding-right: 0; }
+    .image-card .copy-preview { grid-column: 2; }
+    .image-card .copy-action { position: absolute; top: 13px; right: 13px; }
+    .image-card .copy-title { padding-right: 88px; }
+
+    .image-open {
+      display: inline-flex;
+      min-height: 44px;
+      margin-top: 7px;
+      padding: 10px 12px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(126, 167, 235, .18);
+      border-radius: 13px;
+      color: var(--orange-light);
+      background: rgba(10, 27, 58, .58);
+      font-size: .76rem;
+      font-weight: 760;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .image-open:hover { border-color: var(--line-strong); background: rgba(255, 122, 24, .09); }
+
+    .state-panel {
+      display: grid;
+      min-height: 180px;
+      padding: 26px 18px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--muted);
+      background: var(--surface);
+      text-align: center;
+    }
+
+    .state-panel p { margin: 0 0 14px; line-height: 1.7; }
+
+    .loader {
+      width: 30px;
+      height: 30px;
+      margin: 0 auto 12px;
+      border: 3px solid rgba(126, 167, 235, .18);
+      border-top-color: var(--orange-light);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    .retry-button {
+      min-height: 44px;
+      padding: 10px 18px;
+      border: 0;
+      border-radius: 13px;
+      color: #171a29;
+      background: linear-gradient(135deg, var(--orange-light), var(--orange));
+      font-weight: 850;
+      cursor: pointer;
+    }
+
+    .empty-state { display: none; }
+    .empty-state.is-visible { display: grid; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: max(18px, calc(env(safe-area-inset-bottom) + 10px));
+      z-index: 50;
+      display: flex;
+      max-width: calc(100vw - 28px);
+      min-height: 48px;
+      padding: 12px 17px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(85, 223, 173, .35);
+      border-radius: 15px;
+      color: #dffff4;
+      background: rgba(7, 43, 42, .94);
+      box-shadow: var(--shadow);
+      font-size: .82rem;
+      font-weight: 800;
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 18px) scale(.96);
+      transition: opacity .2s ease, transform .25s cubic-bezier(.2,.8,.2,1);
+    }
+
+    .toast.is-visible { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    .toast.is-error { border-color: rgba(255, 140, 145, .36); color: #ffe1e3; background: rgba(69, 18, 32, .96); }
+
+    [hidden] { display: none !important; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (min-width: 720px) {
+      .hero { padding-right: 26px; padding-left: 26px; }
+      .search-dock { padding-right: 26px; padding-left: 26px; }
+      main { padding-right: 26px; padding-left: 26px; }
+      .card-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .copy-card { min-height: 98px; }
+      .image-section { max-width: 520px; }
+    }
+
+    @media (max-width: 359px) {
+      .hero { padding-right: 14px; padding-left: 14px; }
+      .copy-card { padding-right: 12px; padding-left: 14px; }
+      .copy-action { min-width: 52px; padding-right: 7px; padding-left: 7px; }
+      .image-card { grid-template-columns: 62px minmax(0, 1fr); }
+      .image-thumb { width: 62px; }
+      .image-card .copy-title { padding-right: 72px; font-size: .84rem; }
+      .image-card .copy-action { right: 10px; min-width: auto; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+
+    @media (prefers-reduced-transparency: reduce) {
+      .search-dock, .copy-card, .state-panel, .toast { backdrop-filter: none; background: #0b2148; }
+    }
+
+    @media (prefers-contrast: more) {
+      :root { --line: rgba(191, 214, 255, .62); --muted: #c4d2e8; }
+      .copy-card, .search-input, .image-open, .state-panel { border-width: 2px; }
+    }
+
+    @media (forced-colors: active) {
+      .copy-card, .image-open, .search-input, .state-panel, .retry-button { border: 1px solid ButtonText; }
+      .copy-card::before, body::before, .hero::after { display: none; }
+      .copy-action { color: ButtonText; background: ButtonFace; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">コピー項目へ移動</a>
+  <div class="shell">
+    <header class="hero">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">✦</span> LiveNova</div>
+      <h1>クイック<span>コピー</span></h1>
+      <p>使いたい項目をタップすると、そのままクリップボードへコピーできます。</p>
+    </header>
+
+    <div class="search-dock">
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.6-3.6"></path></svg>
+        <input class="search-input" type="search" inputmode="search" autocomplete="off" placeholder="コピー項目を検索" aria-label="コピー項目を検索" data-copy-search>
+        <button class="clear-search" type="button" aria-label="検索をクリア" data-clear-search>×</button>
+      </div>
+      <div class="search-meta">
+        <span data-copy-count aria-live="polite">読み込み中…</span>
+        <a href="../index.html#prestream">フローチャートへ</a>
+      </div>
+    </div>
+
+    <main id="main" tabindex="-1">
+      <div id="loadingState" class="state-panel" role="status">
+        <div><div class="loader" aria-hidden="true"></div>コピー項目を読み込んでいます</div>
+      </div>
+
+      <div id="errorState" class="state-panel" hidden>
+        <div>
+          <p>コピー項目を読み込めませんでした。<br>通信状態を確認して、もう一度お試しください。</p>
+          <button class="retry-button" type="button" data-retry>再読み込み</button>
+        </div>
+      </div>
+
+      <section id="copyContent" hidden aria-label="コピー項目一覧">
+        <div id="copyList" class="card-list"></div>
+        <div id="emptyState" class="state-panel empty-state">
+          <p>一致する項目がありません。<br>別のキーワードでお試しください。</p>
+        </div>
+
+        <section class="image-section" data-image-section aria-labelledby="imageTitle">
+          <p class="section-label">Image clipboard</p>
+          <button class="copy-card image-card" type="button" data-copy-image="../assets/debut-preparation-flow.png" aria-describedby="imageDescription">
+            <img class="image-thumb" src="../assets/debut-preparation-flow.png" width="74" height="112" alt="" loading="lazy" decoding="async">
+            <strong id="imageTitle" class="copy-title">デビュー前の準備（画像）</strong>
+            <span id="imageDescription" class="copy-preview">タップして画像をクリップボードへコピー</span>
+            <span class="copy-action" data-copy-image-status aria-hidden="true">画像コピー</span>
+          </button>
+          <a class="image-open" href="../assets/debut-preparation-flow.png" target="_blank" rel="noopener" data-copy-image-fallback>コピーできない場合は画像を開く</a>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const CSV_URL = "../copy-items.csv";
+      const list = document.querySelector("#copyList");
+      const content = document.querySelector("#copyContent");
+      const loading = document.querySelector("#loadingState");
+      const errorState = document.querySelector("#errorState");
+      const emptyState = document.querySelector("#emptyState");
+      const search = document.querySelector("[data-copy-search]");
+      const clearSearch = document.querySelector("[data-clear-search]");
+      const count = document.querySelector("[data-copy-count]");
+      const imageSection = document.querySelector("[data-image-section]");
+      const imageButton = document.querySelector("[data-copy-image]");
+      const imageStatus = document.querySelector("[data-copy-image-status]");
+      const toast = document.querySelector("#toast");
+      let items = [];
+      let toastTimer = 0;
+      let resetTimer = 0;
+
+      function parseCsvRows(csvText) {
+        const source = String(csvText).replace(/^\uFEFF/, "");
+        const rows = [];
+        let row = [];
+        let cell = "";
+        let quoted = false;
+
+        for (let index = 0; index < source.length; index += 1) {
+          const char = source[index];
+          if (quoted) {
+            if (char === '"' && source[index + 1] === '"') {
+              cell += '"';
+              index += 1;
+            } else if (char === '"') {
+              quoted = false;
+            } else {
+              cell += char;
+            }
+          } else if (char === '"') {
+            quoted = true;
+          } else if (char === ",") {
+            row.push(cell);
+            cell = "";
+          } else if (char === "\n") {
+            row.push(cell.replace(/\r$/, ""));
+            if (row.some(value => value !== "")) rows.push(row);
+            row = [];
+            cell = "";
+          } else {
+            cell += char;
+          }
+        }
+
+        if (quoted) throw new Error("CSVの引用符が閉じていません");
+        row.push(cell.replace(/\r$/, ""));
+        if (row.some(value => value !== "")) rows.push(row);
+        return rows;
+      }
+
+      function parseCopyItemsCsv(csvText) {
+        const rows = parseCsvRows(csvText);
+        if (rows.length < 2) throw new Error("コピー項目がありません");
+        const headers = rows[0].map(value => value.trim().toLowerCase());
+        const findColumn = names => names.map(name => headers.indexOf(name)).find(index => index >= 0);
+        const orderIndex = findColumn(["並び順", "order"]);
+        const idIndex = findColumn(["id", "項目id"]);
+        const titleIndex = findColumn(["表示名", "title"]);
+        const textIndex = findColumn(["コピー本文", "text"]);
+        if (titleIndex === undefined || textIndex === undefined) throw new Error("CSVの列名が正しくありません");
+
+        return rows.slice(1).map((row, index) => ({
+          order: orderIndex === undefined ? index + 1 : Number(row[orderIndex]) || index + 1,
+          id: idIndex === undefined ? `copy-${index + 1}` : (row[idIndex] || `copy-${index + 1}`).trim(),
+          title: (row[titleIndex] || "").trim(),
+          text: (row[textIndex] || "").trim()
+        })).filter(item => item.title && item.text).sort((a, b) => a.order - b.order);
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, char => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        })[char]);
+      }
+
+      function previewText(value) {
+        return value.replace(/\s+/g, " ").trim();
+      }
+
+      function renderItems(visibleItems = items) {
+        list.innerHTML = visibleItems.map(item => `
+          <button class="copy-card" type="button" data-copy-item="${escapeHtml(item.id)}" data-copy-title="${escapeHtml(item.title)}" aria-label="${escapeHtml(item.title)}をコピー">
+            <strong class="copy-title">${escapeHtml(item.title)}</strong>
+            <span class="copy-action" aria-hidden="true">コピー</span>
+            <span class="copy-preview">${escapeHtml(previewText(item.text))}</span>
+          </button>
+        `).join("");
+        count.textContent = `${visibleItems.length}件の定型文`;
+      }
+
+      function showToast(message, isError = false) {
+        window.clearTimeout(toastTimer);
+        toast.textContent = message;
+        toast.classList.toggle("is-error", isError);
+        toast.classList.add("is-visible");
+        toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 2100);
+      }
+
+      async function writeText(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          return;
+        }
+        const helper = document.createElement("textarea");
+        helper.value = text;
+        helper.setAttribute("readonly", "");
+        helper.style.cssText = "position:fixed;inset:auto auto 0 -9999px;opacity:0";
+        document.body.appendChild(helper);
+        helper.select();
+        const copied = document.execCommand("copy");
+        helper.remove();
+        if (!copied) throw new Error("コピーに失敗しました");
+      }
+
+      function markCopied(button, label = "コピー済み") {
+        window.clearTimeout(resetTimer);
+        document.querySelectorAll(".copy-card.is-copied").forEach(card => {
+          card.classList.remove("is-copied");
+          const action = card.querySelector(".copy-action");
+          if (action) action.textContent = card.matches("[data-copy-image]") ? "画像コピー" : "コピー";
+        });
+        button.classList.add("is-copied");
+        const action = button.querySelector(".copy-action");
+        if (action) action.textContent = label;
+        resetTimer = window.setTimeout(() => {
+          button.classList.remove("is-copied");
+          if (action) action.textContent = button.matches("[data-copy-image]") ? "画像コピー" : "コピー";
+        }, 1900);
+      }
+
+      async function copyImage() {
+        const imageUrl = imageButton.dataset.copyImage;
+        try {
+          if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") throw new Error("このブラウザは画像コピーに対応していません");
+          if (typeof ClipboardItem.supports === "function" && !ClipboardItem.supports("image/png")) throw new Error("PNG画像のコピーに対応していません");
+          const pngBlob = fetch(imageUrl, { cache: "force-cache" }).then(response => {
+            if (!response.ok) throw new Error("画像を読み込めませんでした");
+            return response.blob();
+          }).then(blob => blob.type === "image/png" ? blob : blob.arrayBuffer().then(buffer => new Blob([buffer], { type: "image/png" })));
+          await navigator.clipboard.write([new ClipboardItem({ "image/png": pngBlob })]);
+          markCopied(imageButton);
+          showToast("画像をコピーしました");
+        } catch (error) {
+          console.warn(error);
+          imageStatus.textContent = "コピー不可";
+          showToast("画像をコピーできません。下の「画像を開く」をお使いください", true);
+          window.setTimeout(() => { imageStatus.textContent = "画像コピー"; }, 2400);
+        }
+      }
+
+      function filterItems() {
+        const query = search.value.trim().toLocaleLowerCase("ja");
+        clearSearch.classList.toggle("is-visible", Boolean(query));
+        const visible = query ? items.filter(item => `${item.title}\n${item.text}`.toLocaleLowerCase("ja").includes(query)) : items;
+        const imageMatches = !query || "デビュー前の準備 画像 タップして画像をクリップボードへコピー".toLocaleLowerCase("ja").includes(query);
+        renderItems(visible);
+        if (query && imageMatches) count.textContent = visible.length ? `${visible.length}件の定型文・画像1件` : "画像 1件";
+        imageSection.hidden = !imageMatches;
+        emptyState.classList.toggle("is-visible", visible.length === 0 && !imageMatches);
+      }
+
+      async function loadItems() {
+        loading.hidden = false;
+        errorState.hidden = true;
+        content.hidden = true;
+        count.textContent = "読み込み中…";
+        try {
+          const response = await fetch(`${CSV_URL}?v=${Date.now()}`, { cache: "no-store" });
+          if (!response.ok) throw new Error(`CSVの取得に失敗しました (${response.status})`);
+          items = parseCopyItemsCsv(await response.text());
+          filterItems();
+          loading.hidden = true;
+          content.hidden = false;
+        } catch (error) {
+          console.error(error);
+          loading.hidden = true;
+          errorState.hidden = false;
+          count.textContent = "読み込みエラー";
+        }
+      }
+
+      list.addEventListener("click", async event => {
+        const button = event.target.closest("[data-copy-item]");
+        if (!button) return;
+        const item = items.find(candidate => candidate.id === button.dataset.copyItem);
+        if (!item) return;
+        try {
+          await writeText(item.text);
+          markCopied(button);
+          showToast(`「${item.title}」をコピーしました`);
+        } catch (error) {
+          console.warn(error);
+          showToast("コピーできませんでした。ブラウザの権限をご確認ください", true);
+        }
+      });
+
+      imageButton.addEventListener("click", copyImage);
+      search.addEventListener("input", filterItems);
+      search.addEventListener("search", filterItems);
+      clearSearch.addEventListener("click", () => {
+        search.value = "";
+        filterItems();
+        search.focus();
+      });
+      document.querySelector("[data-retry]").addEventListener("click", loadItems);
+
+      loadItems();
+    })();
+  </script>
+</body>
+</html>
