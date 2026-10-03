@@ -1,0 +1,1110 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#06152f">
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.github.com; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='17' fill='%2306152f'/%3E%3Cpath d='M19 38.5V45h6.5L46 24.5 39.5 18 19 38.5Zm32-19L44.5 13 41 16.5l6.5 6.5L51 19.5Z' fill='%23ff9b4a'/%3E%3C/svg%3E">
+  <title>コピー内容管理 | LiveNova</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #040b1d;
+      --bg-deep: #020713;
+      --surface: rgba(11, 29, 63, .9);
+      --surface-raised: rgba(16, 43, 90, .92);
+      --line: rgba(124, 170, 246, .2);
+      --line-strong: rgba(255, 157, 73, .55);
+      --text: #f5f8ff;
+      --muted: #9eb1d1;
+      --orange: #ff7a18;
+      --orange-light: #ffb16e;
+      --green: #55dfad;
+      --red: #ff858d;
+      --yellow: #ffd06c;
+      --shadow: 0 18px 48px rgba(0, 4, 20, .34);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      min-width: 320px;
+      min-height: 100%;
+      background: var(--bg-deep);
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% -5%, rgba(35, 100, 199, .38), transparent 34rem),
+        radial-gradient(circle at 96% 13%, rgba(255, 122, 24, .12), transparent 24rem),
+        linear-gradient(180deg, #071a3a 0, var(--bg) 38%, var(--bg-deep) 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      content: "";
+      pointer-events: none;
+      opacity: .36;
+      background-image:
+        radial-gradient(circle, rgba(255,255,255,.7) 0 1px, transparent 1.3px),
+        radial-gradient(circle, rgba(109,166,255,.58) 0 1px, transparent 1.4px);
+      background-position: 18px 24px, 77px 92px;
+      background-size: 116px 116px, 173px 173px;
+      mask-image: linear-gradient(to bottom, #000, transparent 78%);
+    }
+
+    button, input, textarea { font: inherit; }
+    button, a, summary { -webkit-tap-highlight-color: transparent; }
+    button { cursor: pointer; }
+    [hidden] { display: none !important; }
+
+    .shell { width: min(100%, 900px); margin: 0 auto; }
+
+    .hero {
+      position: relative;
+      padding: max(26px, env(safe-area-inset-top)) 16px 20px;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      position: absolute;
+      top: -78px;
+      right: -54px;
+      width: 190px;
+      aspect-ratio: 1;
+      content: "";
+      border: 1px solid rgba(255, 153, 67, .26);
+      border-radius: 50%;
+      background: radial-gradient(circle at 42% 38%, #ffb56e 0, #bd4817 12%, #452039 48%, #07122b 72%);
+      box-shadow: 0 0 50px rgba(255, 112, 20, .18);
+      opacity: .5;
+      pointer-events: none;
+    }
+
+    .brand {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: #dfeaff;
+      font-size: .72rem;
+      font-weight: 850;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      border: 1px solid rgba(255, 173, 102, .52);
+      border-radius: 10px;
+      color: var(--orange-light);
+      background: rgba(255, 122, 24, .11);
+    }
+
+    .hero h1 {
+      position: relative;
+      z-index: 1;
+      margin: 20px 0 8px;
+      font-size: clamp(1.9rem, 7vw, 3rem);
+      font-weight: 880;
+      letter-spacing: -.045em;
+      line-height: 1.08;
+    }
+
+    .hero h1 span { color: var(--orange-light); }
+    .hero p { position: relative; z-index: 1; margin: 0; color: var(--muted); font-size: .84rem; line-height: 1.7; }
+
+    main { padding: 0 14px calc(108px + env(safe-area-inset-bottom)); }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(145deg, rgba(16, 43, 90, .84), rgba(8, 23, 52, .9));
+      box-shadow: var(--shadow), inset 0 1px rgba(255,255,255,.035);
+      overflow: hidden;
+    }
+
+    .connect-panel { padding: 18px; }
+
+    .eyebrow {
+      margin: 0 0 7px;
+      color: var(--orange-light);
+      font-size: .68rem;
+      font-weight: 850;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .panel h2 { margin: 0; font-size: 1.05rem; line-height: 1.5; }
+    .panel-copy { margin: 7px 0 16px; color: var(--muted); font-size: .79rem; line-height: 1.7; }
+
+    .token-setup {
+      margin: 0 0 16px;
+      border: 1px solid rgba(126, 167, 235, .17);
+      border-radius: 15px;
+      background: rgba(3, 13, 34, .34);
+    }
+
+    .token-setup summary {
+      min-height: 46px;
+      padding: 12px 14px;
+      color: #dbe7fa;
+      font-size: .78rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .setup-body { padding: 0 14px 14px; color: var(--muted); font-size: .75rem; line-height: 1.65; }
+    .setup-body ol { margin: 0 0 12px; padding-left: 1.35rem; }
+    .setup-body li + li { margin-top: 6px; }
+    .setup-body a { display: inline-flex; min-height: 44px; align-items: center; color: var(--orange-light); font-weight: 760; text-underline-offset: 3px; }
+
+    .field-label { display: block; margin: 0 0 7px; color: #cbd9ee; font-size: .73rem; font-weight: 780; }
+
+    .token-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 9px; }
+
+    .text-input, .title-input, .body-input {
+      width: 100%;
+      border: 1px solid rgba(126, 167, 235, .25);
+      border-radius: 14px;
+      outline: none;
+      color: var(--text);
+      background: rgba(5, 17, 43, .84);
+      box-shadow: inset 0 1px rgba(255,255,255,.025);
+      appearance: none;
+      transition: border-color .18s ease, box-shadow .18s ease;
+    }
+
+    .text-input { min-height: 48px; padding: 11px 13px; }
+    .title-input { min-height: 46px; padding: 10px 12px; font-weight: 780; }
+    .body-input { min-height: 180px; padding: 12px; line-height: 1.65; resize: vertical; }
+    .text-input:focus, .title-input:focus, .body-input:focus { border-color: rgba(255, 161, 79, .76); box-shadow: 0 0 0 4px rgba(255, 122, 24, .11); }
+
+    .primary-button, .secondary-button, .icon-button, .danger-button {
+      min-height: 44px;
+      border-radius: 13px;
+      font-weight: 830;
+      transition: transform .14s ease, border-color .18s ease, background .18s ease;
+    }
+
+    .primary-button {
+      padding: 10px 16px;
+      border: 1px solid var(--orange);
+      color: #151928;
+      background: linear-gradient(135deg, var(--orange-light), var(--orange));
+      box-shadow: 0 8px 20px rgba(255, 122, 24, .18);
+    }
+
+    .secondary-button {
+      padding: 10px 14px;
+      border: 1px solid rgba(126, 167, 235, .23);
+      color: #dce8fa;
+      background: rgba(10, 28, 61, .8);
+    }
+
+    .primary-button:hover, .secondary-button:hover, .icon-button:hover { border-color: var(--line-strong); }
+    .primary-button:active, .secondary-button:active, .icon-button:active, .danger-button:active { transform: scale(.975); }
+    button:disabled { cursor: not-allowed; filter: grayscale(.45); opacity: .55; }
+    button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid rgba(255, 168, 91, .42); outline-offset: 3px; }
+
+    .security-note {
+      display: flex;
+      gap: 8px;
+      margin: 12px 0 0;
+      color: #8fa6c9;
+      font-size: .7rem;
+      line-height: 1.55;
+    }
+
+    .connection-state {
+      display: flex;
+      min-height: 48px;
+      margin-top: 13px;
+      padding: 10px 12px;
+      align-items: center;
+      gap: 9px;
+      border: 1px solid rgba(126, 167, 235, .16);
+      border-radius: 13px;
+      color: var(--muted);
+      background: rgba(5, 17, 43, .5);
+      font-size: .75rem;
+      font-weight: 720;
+    }
+
+    .state-dot { width: 9px; height: 9px; flex: 0 0 auto; border-radius: 50%; background: #7184a5; box-shadow: 0 0 0 4px rgba(113,132,165,.1); }
+    .connection-state.is-success { color: #bff7e2; border-color: rgba(85,223,173,.3); background: rgba(10,65,58,.38); }
+    .connection-state.is-success .state-dot { background: var(--green); box-shadow: 0 0 0 4px rgba(85,223,173,.12); }
+    .connection-state.is-error { color: #ffd6d9; border-color: rgba(255,133,141,.3); background: rgba(71,17,31,.4); }
+    .connection-state.is-error .state-dot { background: var(--red); }
+
+    .editor-shell { margin-top: 16px; }
+
+    .editor-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      margin: 0 -14px 12px;
+      padding: 10px 14px;
+      border-top: 1px solid rgba(126,167,235,.08);
+      border-bottom: 1px solid var(--line);
+      background: rgba(4, 13, 32, .91);
+      -webkit-backdrop-filter: blur(18px) saturate(135%);
+      backdrop-filter: blur(18px) saturate(135%);
+    }
+
+    .toolbar-title { min-width: 0; align-self: center; }
+    .toolbar-title strong { display: block; font-size: .85rem; }
+    .toolbar-meta { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 3px; color: #8fa5c7; font-size: .68rem; }
+    .dirty-badge { color: var(--yellow); }
+    .toolbar-actions { display: flex; gap: 7px; }
+    .toolbar-actions .secondary-button { min-width: 46px; padding: 9px 11px; font-size: .72rem; }
+
+    .item-list { display: grid; gap: 12px; }
+
+    .edit-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(15, 40, 83, .9), rgba(7, 22, 49, .94));
+      box-shadow: 0 10px 28px rgba(0,4,20,.2), inset 0 1px rgba(255,255,255,.03);
+      overflow: hidden;
+    }
+
+    .card-head {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 10px;
+      padding: 13px 13px 10px;
+      align-items: center;
+    }
+
+    .item-number {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border: 1px solid rgba(255,157,73,.32);
+      border-radius: 11px;
+      color: var(--orange-light);
+      background: rgba(255,122,24,.08);
+      font-size: .72rem;
+      font-weight: 860;
+    }
+
+    .card-body { padding: 0 13px 13px; }
+    .card-body .field-label { margin-top: 9px; }
+
+    .card-foot {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px 13px;
+      align-items: center;
+      border-top: 1px solid rgba(126,167,235,.12);
+      background: rgba(3, 13, 34, .33);
+    }
+
+    .item-id {
+      min-width: 0;
+      margin-right: auto;
+      color: #7189ad;
+      font: 650 .65rem/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .icon-button, .danger-button {
+      min-width: 44px;
+      padding: 9px 11px;
+      border: 1px solid rgba(126,167,235,.2);
+      color: #d6e3f6;
+      background: rgba(9, 27, 59, .82);
+      font-size: .74rem;
+    }
+
+    .danger-button { border-color: rgba(255,133,141,.2); color: #ffafb4; }
+    .danger-button:hover { border-color: rgba(255,133,141,.55); background: rgba(100,25,38,.35); }
+
+    .add-button {
+      width: 100%;
+      min-height: 54px;
+      margin-top: 13px;
+      border: 1px dashed rgba(255,157,73,.46);
+      border-radius: 16px;
+      color: var(--orange-light);
+      background: rgba(255,122,24,.055);
+      font-weight: 830;
+    }
+
+    .add-button:hover { background: rgba(255,122,24,.1); }
+
+    .publish-bar {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 30;
+      padding: 10px max(14px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+      border-top: 1px solid var(--line);
+      background: rgba(3, 11, 29, .93);
+      -webkit-backdrop-filter: blur(20px) saturate(140%);
+      backdrop-filter: blur(20px) saturate(140%);
+    }
+
+    .publish-inner { display: grid; width: min(100%, 872px); margin: 0 auto; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+    .publish-message { min-width: 0; color: #9db1d0; font-size: .71rem; line-height: 1.45; }
+    .publish-message strong { display: block; color: #dce8f8; font-size: .77rem; }
+    .publish-bar .primary-button { min-width: 128px; }
+
+    .status-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: grid;
+      padding: 18px;
+      place-items: center;
+      background: rgba(1, 6, 18, .72);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+    }
+
+    .status-dialog {
+      width: min(100%, 430px);
+      padding: 22px;
+      border: 1px solid var(--line-strong);
+      border-radius: 22px;
+      background: linear-gradient(145deg, #112d5e, #07162f);
+      box-shadow: 0 28px 80px rgba(0,0,0,.48);
+      text-align: center;
+    }
+
+    .status-icon {
+      display: grid;
+      width: 50px;
+      height: 50px;
+      margin: 0 auto 12px;
+      place-items: center;
+      border: 1px solid rgba(255,157,73,.38);
+      border-radius: 16px;
+      color: var(--orange-light);
+      background: rgba(255,122,24,.09);
+      font-size: 1.35rem;
+    }
+
+    .status-dialog h2 { margin: 0; font-size: 1.08rem; }
+    .status-dialog p { margin: 8px 0 16px; color: var(--muted); font-size: .79rem; line-height: 1.7; white-space: pre-line; }
+    .status-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(255,255,255,.15);
+      border-top-color: var(--orange-light);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (min-width: 600px) {
+      .hero { padding-right: 26px; padding-left: 26px; }
+      main { padding-right: 26px; padding-left: 26px; }
+      .connect-panel { padding: 22px; }
+      .token-row { grid-template-columns: minmax(0, 1fr) auto; }
+      .editor-toolbar { margin-right: -26px; margin-left: -26px; padding-right: 26px; padding-left: 26px; }
+      .card-head { grid-template-columns: 38px minmax(0, 1fr); padding: 16px 16px 11px; }
+      .item-number { width: 38px; height: 38px; }
+      .card-body { padding: 0 16px 16px 64px; }
+      .card-foot { padding-right: 16px; padding-left: 64px; }
+    }
+
+    @media (max-width: 420px) {
+      .toolbar-actions .secondary-button { width: 44px; padding: 9px 4px; overflow: hidden; color: transparent; position: relative; }
+      .toolbar-actions .secondary-button::after { position: absolute; inset: 0; display: grid; place-items: center; color: #dce8fa; content: attr(data-short-label); }
+      .publish-inner { grid-template-columns: minmax(0, 1fr) 122px; }
+      .publish-bar .primary-button { min-width: 122px; padding-right: 8px; padding-left: 8px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    }
+
+    @media (prefers-reduced-transparency: reduce) {
+      .editor-toolbar, .publish-bar, .status-overlay { -webkit-backdrop-filter: none; backdrop-filter: none; }
+      .editor-toolbar, .publish-bar { background: #050f26; }
+    }
+
+    @media (prefers-contrast: more) {
+      :root { --line: rgba(191, 214, 255, .62); --muted: #c4d2e8; }
+      .panel, .edit-card, .text-input, .title-input, .body-input, button { border-width: 2px; }
+    }
+
+    @media (forced-colors: active) {
+      body::before, .hero::after { display: none; }
+      .panel, .edit-card, input, textarea, button, details { border: 1px solid ButtonText; background: Canvas; color: CanvasText; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">✎</span> LiveNova Admin</div>
+      <h1>コピー内容<span>管理</span></h1>
+      <p>編集した内容を公開すると、クイックコピーを使う全員へ反映されます。</p>
+    </header>
+
+    <main>
+      <section class="panel connect-panel" aria-labelledby="connectTitle">
+        <p class="eyebrow">Administrator access</p>
+        <h2 id="connectTitle">GitHubへ接続</h2>
+        <p class="panel-copy">公開データを書き換えるため、管理者用のFine-grained tokenを入力してください。</p>
+
+        <details class="token-setup">
+          <summary>初回のみ：管理者トークンの作り方</summary>
+          <div class="setup-body">
+            <ol>
+              <li>下のリンクからGitHubのトークン作成画面を開きます。</li>
+              <li><strong>Repository access</strong> は「Only select repositories」を選び、<strong>livenova-closing-flowchart</strong>だけを指定します。</li>
+              <li><strong>Repository permissions</strong> の「Contents」を<strong>Read and write</strong>にします。</li>
+              <li>作成されたトークンをコピーし、この画面へ貼り付けます。</li>
+            </ol>
+            <a href="https://github.com/settings/personal-access-tokens/new?name=LiveNova%20Copy%20Editor&description=Edit%20copy-items.csv%20from%20the%20LiveNova%20admin%20page&target_name=TsugaruShinuchi&expires_in=30&contents=write" target="_blank" rel="noopener noreferrer">GitHubで管理者トークンを作成 ↗</a>
+          </div>
+        </details>
+
+        <label class="field-label" for="tokenInput">Fine-grained personal access token</label>
+        <div class="token-row">
+          <input id="tokenInput" class="text-input" type="password" autocomplete="new-password" autocapitalize="none" spellcheck="false" placeholder="github_pat_...">
+          <button id="connectButton" class="primary-button" type="button">接続して読み込む</button>
+        </div>
+        <p class="security-note"><span aria-hidden="true">🔒</span><span>トークンはこのページに保存せず、GitHub APIへの認証通信だけに使用します。このタブを閉じると消えます。</span></p>
+        <div id="connectionState" class="connection-state" role="status" aria-live="polite"><span class="state-dot" aria-hidden="true"></span><span>未接続</span></div>
+      </section>
+
+      <section id="editorShell" class="editor-shell" hidden aria-labelledby="editorTitle">
+        <div class="editor-toolbar">
+          <div class="toolbar-title">
+            <strong id="editorTitle">コピー項目</strong>
+            <div class="toolbar-meta"><span id="itemCount">0件</span><span id="dirtyBadge" class="dirty-badge" hidden>● 未公開の変更あり</span></div>
+          </div>
+          <div class="toolbar-actions">
+            <button id="backupButton" class="secondary-button" type="button" data-short-label="保存">CSV保存</button>
+            <button id="reloadButton" class="secondary-button" type="button" data-short-label="再読込">再読み込み</button>
+          </div>
+        </div>
+
+        <div id="itemList" class="item-list"></div>
+        <button id="addButton" class="add-button" type="button">＋ コピー項目を追加</button>
+      </section>
+    </main>
+  </div>
+
+  <div id="publishBar" class="publish-bar" hidden>
+    <div class="publish-inner">
+      <div class="publish-message"><strong id="publishLabel">変更はありません</strong><span>GitHub履歴から復元できます</span></div>
+      <button id="publishButton" class="primary-button" type="button" disabled>変更を公開</button>
+    </div>
+  </div>
+
+  <div id="statusOverlay" class="status-overlay" hidden>
+    <div class="status-dialog" role="dialog" aria-modal="true" aria-labelledby="statusTitle" aria-describedby="statusText">
+      <div id="statusIcon" class="status-icon" aria-hidden="true">✦</div>
+      <h2 id="statusTitle">処理中</h2>
+      <p id="statusText">しばらくお待ちください</p>
+      <div id="statusActions" class="status-actions"></div>
+    </div>
+  </div>
+
+  <div id="liveRegion" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const CONFIG = Object.freeze({
+        owner: "TsugaruShinuchi",
+        repo: "livenova-closing-flowchart",
+        branch: "main",
+        path: "copy-items.csv",
+        apiVersion: "2026-03-10",
+        publicCsvUrl: "../copy-items.csv",
+        publicSiteUrl: "../quick-3ef2313e2ba17ab4b6a1956d/"
+      });
+
+      const contentApiUrl = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/${CONFIG.path}`;
+      const state = {
+        token: "",
+        baseSha: "",
+        items: [],
+        baselineItems: [],
+        dirty: false,
+        publishing: false
+      };
+
+      const tokenInput = document.querySelector("#tokenInput");
+      const connectButton = document.querySelector("#connectButton");
+      const connectionState = document.querySelector("#connectionState");
+      const editorShell = document.querySelector("#editorShell");
+      const itemList = document.querySelector("#itemList");
+      const itemCount = document.querySelector("#itemCount");
+      const dirtyBadge = document.querySelector("#dirtyBadge");
+      const addButton = document.querySelector("#addButton");
+      const backupButton = document.querySelector("#backupButton");
+      const reloadButton = document.querySelector("#reloadButton");
+      const publishBar = document.querySelector("#publishBar");
+      const publishButton = document.querySelector("#publishButton");
+      const publishLabel = document.querySelector("#publishLabel");
+      const statusOverlay = document.querySelector("#statusOverlay");
+      const statusIcon = document.querySelector("#statusIcon");
+      const statusTitle = document.querySelector("#statusTitle");
+      const statusText = document.querySelector("#statusText");
+      const statusActions = document.querySelector("#statusActions");
+      const liveRegion = document.querySelector("#liveRegion");
+
+      function parseCsvRows(csvText) {
+        const source = String(csvText).replace(/^\uFEFF/, "");
+        const rows = [];
+        let row = [];
+        let cell = "";
+        let quoted = false;
+
+        for (let index = 0; index < source.length; index += 1) {
+          const char = source[index];
+          if (quoted) {
+            if (char === '"' && source[index + 1] === '"') {
+              cell += '"';
+              index += 1;
+            } else if (char === '"') {
+              quoted = false;
+            } else {
+              cell += char;
+            }
+          } else if (char === '"') {
+            quoted = true;
+          } else if (char === ",") {
+            row.push(cell);
+            cell = "";
+          } else if (char === "\n") {
+            row.push(cell.replace(/\r$/, ""));
+            if (row.some(value => value !== "")) rows.push(row);
+            row = [];
+            cell = "";
+          } else {
+            cell += char;
+          }
+        }
+
+        if (quoted) throw new Error("CSVの引用符が閉じていません");
+        row.push(cell.replace(/\r$/, ""));
+        if (row.some(value => value !== "")) rows.push(row);
+        return rows;
+      }
+
+      function parseCopyItemsCsv(csvText) {
+        const rows = parseCsvRows(csvText);
+        if (rows.length < 2) throw new Error("コピー項目がありません");
+        const headers = rows[0].map(value => value.trim().toLowerCase());
+        const findColumn = names => names.map(name => headers.indexOf(name)).find(index => index >= 0);
+        const orderIndex = findColumn(["並び順", "order"]);
+        const idIndex = findColumn(["id", "項目id"]);
+        const titleIndex = findColumn(["表示名", "title"]);
+        const textIndex = findColumn(["コピー本文", "text"]);
+        if (titleIndex === undefined || textIndex === undefined) throw new Error("CSVの列名が正しくありません");
+
+        return rows.slice(1).map((row, index) => ({
+          order: orderIndex === undefined ? index + 1 : Number(row[orderIndex]) || index + 1,
+          id: idIndex === undefined ? `copy-${index + 1}` : (row[idIndex] || `copy-${index + 1}`).trim(),
+          title: (row[titleIndex] || "").trim(),
+          text: (row[textIndex] || "").trim()
+        })).filter(item => item.title || item.text).sort((a, b) => a.order - b.order);
+      }
+
+      function csvCell(value) {
+        const text = String(value ?? "");
+        return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+      }
+
+      function serializeCsv(items) {
+        const rows = [["並び順", "ID", "表示名", "コピー本文"]];
+        items.forEach((item, index) => rows.push([index + 1, item.id, item.title.trim(), item.text.trim()]));
+        return `${rows.map(row => row.map(csvCell).join(",")).join("\r\n")}\r\n`;
+      }
+
+      function decodeBase64Utf8(value) {
+        const binary = atob(String(value).replace(/\s/g, ""));
+        const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+        return new TextDecoder().decode(bytes);
+      }
+
+      function encodeBase64Utf8(value) {
+        const bytes = new TextEncoder().encode(value);
+        let binary = "";
+        const chunkSize = 0x8000;
+        for (let index = 0; index < bytes.length; index += chunkSize) {
+          binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+        }
+        return btoa(binary);
+      }
+
+      function normalizeText(value) {
+        return String(value).replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n").trimEnd();
+      }
+
+      function apiHeaders(token = state.token) {
+        return {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${token}`,
+          "X-GitHub-Api-Version": CONFIG.apiVersion
+        };
+      }
+
+      async function apiRequest(url, options = {}) {
+        const { token = state.token, headers = {}, ...fetchOptions } = options;
+        const response = await fetch(url, {
+          ...fetchOptions,
+          cache: "no-store",
+          headers: { ...apiHeaders(token), ...headers }
+        });
+        let data = null;
+        try { data = await response.json(); } catch (_) { data = null; }
+        if (!response.ok) {
+          const error = new Error(data?.message || `GitHub APIエラー (${response.status})`);
+          error.status = response.status;
+          error.rateLimited = response.status === 429 || /rate limit/i.test(data?.message || "");
+          throw error;
+        }
+        return data;
+      }
+
+      function readableError(error) {
+        if (error?.rateLimited) return "GitHub APIの利用上限に達しました。表示された時刻を空けて、もう一度お試しください。";
+        if (error?.status === 401) return "トークンが無効です。新しいトークンを貼り付けてください。";
+        if (error?.status === 403) return "書き込み権限がありません。対象リポジトリとContents: Read and writeを確認してください。";
+        if (error?.status === 404) return "対象ファイルへアクセスできません。トークンのリポジトリ指定を確認してください。";
+        if (error?.status === 409) return "GitHub側で競合が発生しました。最新版を再読み込みしてください。";
+        if (error?.status === 422) return "更新内容をGitHubへ保存できませんでした。入力内容と権限を確認してください。";
+        if (!navigator.onLine) return "オフラインです。通信状態を確認してください。";
+        return error?.message || "処理に失敗しました。";
+      }
+
+      function setConnection(message, type = "") {
+        connectionState.className = `connection-state${type ? ` is-${type}` : ""}`;
+        connectionState.querySelector("span:last-child").textContent = message;
+      }
+
+      function announce(message) {
+        liveRegion.textContent = "";
+        requestAnimationFrame(() => { liveRegion.textContent = message; });
+      }
+
+      function setDirty(value = true) {
+        state.dirty = value;
+        dirtyBadge.hidden = !value;
+        publishButton.disabled = !value || state.publishing;
+        publishLabel.textContent = value ? "未公開の変更があります" : "変更はありません";
+      }
+
+      function createItemId() {
+        const random = crypto.getRandomValues(new Uint32Array(1))[0].toString(36);
+        return `copy-${Date.now().toString(36)}-${random}`;
+      }
+
+      function renderItems(focusIndex = -1) {
+        itemList.replaceChildren();
+        state.items.forEach((item, index) => {
+          const card = document.createElement("article");
+          card.className = "edit-card";
+          card.dataset.itemId = item.id;
+
+          const head = document.createElement("div");
+          head.className = "card-head";
+          const number = document.createElement("span");
+          number.className = "item-number";
+          number.textContent = String(index + 1).padStart(2, "0");
+          number.setAttribute("aria-hidden", "true");
+          const titleWrap = document.createElement("div");
+          const titleLabel = document.createElement("label");
+          titleLabel.className = "field-label";
+          titleLabel.htmlFor = `title-${item.id}`;
+          titleLabel.textContent = "表示名";
+          const titleInput = document.createElement("input");
+          titleInput.className = "title-input";
+          titleInput.id = `title-${item.id}`;
+          titleInput.value = item.title;
+          titleInput.dataset.field = "title";
+          titleInput.maxLength = 120;
+          titleInput.placeholder = "例：プロフィール文サンプル";
+          titleWrap.append(titleLabel, titleInput);
+          head.append(number, titleWrap);
+
+          const body = document.createElement("div");
+          body.className = "card-body";
+          const textLabel = document.createElement("label");
+          textLabel.className = "field-label";
+          textLabel.htmlFor = `text-${item.id}`;
+          textLabel.textContent = "コピー本文";
+          const textarea = document.createElement("textarea");
+          textarea.className = "body-input";
+          textarea.id = `text-${item.id}`;
+          textarea.value = item.text;
+          textarea.dataset.field = "text";
+          textarea.placeholder = "コピーする文章を入力";
+          textarea.spellcheck = true;
+          body.append(textLabel, textarea);
+
+          const foot = document.createElement("div");
+          foot.className = "card-foot";
+          const idLabel = document.createElement("span");
+          idLabel.className = "item-id";
+          idLabel.textContent = item.id;
+          idLabel.title = item.id;
+
+          const up = document.createElement("button");
+          up.className = "icon-button";
+          up.type = "button";
+          up.textContent = "↑";
+          up.dataset.action = "up";
+          up.disabled = index === 0;
+          up.setAttribute("aria-label", `${item.title || `${index + 1}番目の項目`}を上へ移動`);
+
+          const down = document.createElement("button");
+          down.className = "icon-button";
+          down.type = "button";
+          down.textContent = "↓";
+          down.dataset.action = "down";
+          down.disabled = index === state.items.length - 1;
+          down.setAttribute("aria-label", `${item.title || `${index + 1}番目の項目`}を下へ移動`);
+
+          const remove = document.createElement("button");
+          remove.className = "danger-button";
+          remove.type = "button";
+          remove.textContent = "削除";
+          remove.dataset.action = "delete";
+          remove.setAttribute("aria-label", `${item.title || `${index + 1}番目の項目`}を削除`);
+
+          foot.append(idLabel, up, down, remove);
+          card.append(head, body, foot);
+          itemList.append(card);
+        });
+
+        itemCount.textContent = `${state.items.length}件`;
+        if (focusIndex >= 0) {
+          requestAnimationFrame(() => itemList.querySelectorAll(".title-input")[focusIndex]?.focus());
+        }
+      }
+
+      function validateItems() {
+        if (!state.items.length) throw new Error("コピー項目を1件以上追加してください。");
+        const ids = new Set();
+        for (let index = 0; index < state.items.length; index += 1) {
+          const item = state.items[index];
+          if (!item.title.trim()) throw new Error(`${index + 1}番目の表示名を入力してください。`);
+          if (!item.text.trim()) throw new Error(`「${item.title.trim()}」のコピー本文を入力してください。`);
+          if (!item.id || ids.has(item.id)) throw new Error(`${index + 1}番目の項目IDが重複しています。`);
+          ids.add(item.id);
+        }
+        const csv = serializeCsv(state.items);
+        const reparsed = parseCopyItemsCsv(csv);
+        const comparable = items => items.map(item => ({ id: item.id, title: item.title.trim(), text: item.text.trim() }));
+        if (JSON.stringify(comparable(reparsed)) !== JSON.stringify(comparable(state.items))) {
+          throw new Error("CSVへの変換結果を確認できませんでした。特殊文字や改行をご確認ください。");
+        }
+      }
+
+      function summarizeChanges() {
+        const before = new Map(state.baselineItems.map((item, index) => [item.id, { item, index }]));
+        const after = new Map(state.items.map((item, index) => [item.id, { item, index }]));
+        let added = 0;
+        let removed = 0;
+        let changed = 0;
+        let reordered = false;
+        after.forEach(({ item, index }, id) => {
+          const previous = before.get(id);
+          if (!previous) {
+            added += 1;
+            return;
+          }
+          if (previous.item.title !== item.title || previous.item.text !== item.text) changed += 1;
+          if (previous.index !== index) reordered = true;
+        });
+        before.forEach((_, id) => { if (!after.has(id)) removed += 1; });
+        return { added, removed, changed, reordered };
+      }
+
+      async function loadLatest(token = state.token, confirmDiscard = false) {
+        if (confirmDiscard && state.dirty && !window.confirm("未公開の変更を破棄して最新版を読み込みますか？")) return;
+        const firstConnection = editorShell.hidden;
+        setConnection("GitHubから最新版を読み込んでいます…");
+        const data = await apiRequest(`${contentApiUrl}?ref=${encodeURIComponent(CONFIG.branch)}`, { token });
+        if (data.type !== "file" || !data.content || !data.sha) throw new Error("CSVファイルを読み込めませんでした。");
+        state.token = token;
+        state.baseSha = data.sha;
+        state.items = parseCopyItemsCsv(decodeBase64Utf8(data.content));
+        state.baselineItems = state.items.map(item => ({ ...item }));
+        tokenInput.value = "";
+        editorShell.hidden = false;
+        publishBar.hidden = false;
+        renderItems();
+        setDirty(false);
+        setConnection("接続済み・最新版を読み込みました", "success");
+        announce(`${state.items.length}件のコピー項目を読み込みました`);
+        if (firstConnection) requestAnimationFrame(() => editorShell.scrollIntoView({ behavior: "smooth", block: "start" }));
+      }
+
+      function showStatus({ icon = "✦", title, text, actions = [] }) {
+        statusIcon.replaceChildren();
+        if (icon === "spinner") {
+          const spinner = document.createElement("span");
+          spinner.className = "spinner";
+          statusIcon.append(spinner);
+        } else {
+          statusIcon.textContent = icon;
+        }
+        statusTitle.textContent = title;
+        statusText.textContent = text;
+        statusActions.replaceChildren();
+        actions.forEach(action => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = action.primary ? "primary-button" : "secondary-button";
+          button.textContent = action.label;
+          button.addEventListener("click", action.onClick);
+          statusActions.append(button);
+        });
+        statusOverlay.hidden = false;
+      }
+
+      function hideStatus() {
+        statusOverlay.hidden = true;
+      }
+
+      function downloadBackup() {
+        const csv = serializeCsv(state.items);
+        const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv;charset=utf-8" });
+        const link = document.createElement("a");
+        const now = new Date();
+        const stamp = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"), String(now.getDate()).padStart(2, "0")].join("");
+        link.href = URL.createObjectURL(blob);
+        link.download = `copy-items-backup-${stamp}.csv`;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+        announce("CSVバックアップを保存しました");
+      }
+
+      async function waitForPublicCsv(expectedCsv) {
+        const expected = normalizeText(expectedCsv);
+        const deadline = Date.now() + 180000;
+        while (Date.now() < deadline) {
+          try {
+            const response = await fetch(`${CONFIG.publicCsvUrl}?v=${Date.now()}`, { cache: "no-store" });
+            if (response.ok && normalizeText(await response.text()) === expected) return true;
+          } catch (_) {}
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+        return false;
+      }
+
+      async function publishChanges() {
+        if (state.publishing || !state.dirty) return;
+        try {
+          validateItems();
+        } catch (error) {
+          showStatus({ icon: "!", title: "入力内容を確認してください", text: error.message, actions: [{ label: "閉じる", primary: true, onClick: hideStatus }] });
+          return;
+        }
+
+        const summary = summarizeChanges();
+        const summaryText = `追加 ${summary.added}件／本文変更 ${summary.changed}件／削除 ${summary.removed}件／並び替え ${summary.reordered ? "あり" : "なし"}`;
+        if (!window.confirm(`編集内容を全利用者へ公開します。\n\n${summaryText}\n\nよろしいですか？`)) return;
+        state.publishing = true;
+        publishButton.disabled = true;
+        showStatus({ icon: "spinner", title: "GitHubへ保存中", text: "最新版との競合を確認しています…" });
+
+        try {
+          const latest = await apiRequest(`${contentApiUrl}?ref=${encodeURIComponent(CONFIG.branch)}`);
+          if (latest.sha !== state.baseSha) {
+            const error = new Error("ほかの更新が見つかりました。上書きを防ぐため公開を中止しました。最新版を再読み込みしてください。");
+            error.code = "conflict";
+            throw error;
+          }
+
+          const csv = serializeCsv(state.items);
+          if (normalizeText(decodeBase64Utf8(latest.content)) === normalizeText(csv)) {
+            state.baselineItems = state.items.map(item => ({ ...item }));
+            setDirty(false);
+            showStatus({ icon: "✓", title: "内容は最新です", text: "公開済みデータと同じ内容のため、更新は不要でした。", actions: [{ label: "閉じる", primary: true, onClick: hideStatus }] });
+            return;
+          }
+
+          const result = await apiRequest(contentApiUrl, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: "Update copy items from admin editor",
+              content: encodeBase64Utf8(csv),
+              sha: latest.sha,
+              branch: CONFIG.branch
+            })
+          });
+
+          state.baseSha = result.content?.sha || state.baseSha;
+          state.baselineItems = state.items.map(item => ({ ...item }));
+          setDirty(false);
+          showStatus({ icon: "spinner", title: "公開反映を確認中", text: "GitHubへの保存が完了しました。\nサイトへの反映には通常1〜2分かかります。" });
+          const published = await waitForPublicCsv(csv);
+          const commitUrl = result.commit?.html_url || "";
+          if (published) {
+            showStatus({
+              icon: "✓",
+              title: "全員へ反映されました",
+              text: "クイックコピーの公開データを更新しました。",
+              actions: [
+                { label: "管理画面へ戻る", onClick: hideStatus },
+                ...(commitUrl ? [{ label: "更新履歴", onClick: () => window.open(commitUrl, "_blank", "noopener") }] : []),
+                { label: "公開サイトを確認", primary: true, onClick: () => window.open(`${CONFIG.publicSiteUrl}?v=${Date.now()}`, "_blank", "noopener") }
+              ]
+            });
+          } else {
+            showStatus({ icon: "…", title: "GitHubへの保存は完了しました", text: "公開処理が続いています。1〜2分後に公開サイトをご確認ください。", actions: [{ label: "閉じる", primary: true, onClick: hideStatus }] });
+          }
+        } catch (error) {
+          const isConflict = error.code === "conflict" || error.status === 409 || error.status === 422;
+          showStatus({
+            icon: "!",
+            title: isConflict ? "更新の競合を検出しました" : "公開できませんでした",
+            text: isConflict ? "別の更新、またはGitHub側の検証競合が見つかりました。未公開内容はCSV保存で退避し、最新版を再読み込みしてください。" : readableError(error),
+            actions: isConflict ? [
+              { label: "閉じる", onClick: hideStatus },
+              { label: "最新版を再読み込み", primary: true, onClick: async () => { hideStatus(); try { await loadLatest(state.token, true); } catch (loadError) { setConnection(readableError(loadError), "error"); } } }
+            ] : [{ label: "閉じる", primary: true, onClick: hideStatus }]
+          });
+        } finally {
+          state.publishing = false;
+          publishButton.disabled = !state.dirty;
+        }
+      }
+
+      connectButton.addEventListener("click", async () => {
+        const token = tokenInput.value.trim();
+        if (!token) {
+          setConnection("管理者トークンを入力してください", "error");
+          tokenInput.focus();
+          return;
+        }
+        connectButton.disabled = true;
+        tokenInput.disabled = true;
+        try {
+          await loadLatest(token, !editorShell.hidden);
+        } catch (error) {
+          state.token = "";
+          setConnection(readableError(error), "error");
+        } finally {
+          connectButton.disabled = false;
+          tokenInput.disabled = false;
+        }
+      });
+
+      tokenInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") connectButton.click();
+      });
+
+      itemList.addEventListener("input", event => {
+        const field = event.target.dataset.field;
+        if (!field) return;
+        const card = event.target.closest("[data-item-id]");
+        const item = state.items.find(candidate => candidate.id === card?.dataset.itemId);
+        if (!item) return;
+        item[field] = event.target.value;
+        setDirty(true);
+      });
+
+      itemList.addEventListener("click", event => {
+        const button = event.target.closest("button[data-action]");
+        if (!button) return;
+        const card = button.closest("[data-item-id]");
+        const index = state.items.findIndex(item => item.id === card?.dataset.itemId);
+        if (index < 0) return;
+
+        if (button.dataset.action === "delete") {
+          const title = state.items[index].title || `${index + 1}番目の項目`;
+          if (!window.confirm(`「${title}」を削除しますか？`)) return;
+          state.items.splice(index, 1);
+          renderItems(Math.min(index, state.items.length - 1));
+          setDirty(true);
+          announce(`${title}を削除しました`);
+          return;
+        }
+
+        const targetIndex = button.dataset.action === "up" ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= state.items.length) return;
+        [state.items[index], state.items[targetIndex]] = [state.items[targetIndex], state.items[index]];
+        renderItems(targetIndex);
+        setDirty(true);
+        announce(`${state.items[targetIndex].title || "項目"}を${button.dataset.action === "up" ? "上" : "下"}へ移動しました`);
+      });
+
+      addButton.addEventListener("click", () => {
+        state.items.push({ id: createItemId(), title: "", text: "" });
+        renderItems(state.items.length - 1);
+        setDirty(true);
+        window.setTimeout(() => itemList.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
+      });
+
+      backupButton.addEventListener("click", downloadBackup);
+      reloadButton.addEventListener("click", async () => {
+        try { await loadLatest(state.token, true); }
+        catch (error) { setConnection(readableError(error), "error"); }
+      });
+      publishButton.addEventListener("click", publishChanges);
+
+      window.addEventListener("beforeunload", event => {
+        if (!state.dirty) return;
+        event.preventDefault();
+        event.returnValue = "";
+      });
+
+      window.addEventListener("pagehide", () => {
+        state.token = "";
+        tokenInput.value = "";
+      });
+    })();
+  </script>
+</body>
+</html>
